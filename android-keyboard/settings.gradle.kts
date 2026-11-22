@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OfflineVoiceKeyboard"
+rootProject.name = "Spokify"
 include(":app")

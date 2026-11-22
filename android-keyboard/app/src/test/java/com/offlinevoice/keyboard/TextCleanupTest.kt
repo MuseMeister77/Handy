@@ -92,4 +92,32 @@ class TextCleanupTest {
     @Test fun fitAfterNewLine() {
         assertEquals("Thanks.", TextCleanup.fitToContext("Thanks.", "Hi,\n"))
     }
+
+    @Test fun spliceIntoEmptyBox() {
+        val r = TextCleanup.spliceAtCursor("", -1, -1, "Hello there.")
+        assertEquals("Hello there.", r.text)
+        assertEquals(12, r.cursor)
+    }
+
+    @Test fun spliceAtEndAddsSpace() {
+        val r = TextCleanup.spliceAtCursor("Hi team.", 8, 8, "Invoice attached.")
+        assertEquals("Hi team. Invoice attached.", r.text)
+        assertEquals(r.text.length, r.cursor)
+    }
+
+    @Test fun spliceInMiddleKeepsTextAfterCursor() {
+        val r = TextCleanup.spliceAtCursor("Dear John, Regards", 11, 11, "Thanks for the update.")
+        assertEquals("Dear John, Thanks for the update. Regards", r.text)
+        assertEquals(11 + "Thanks for the update. ".length, r.cursor)
+    }
+
+    @Test fun spliceReplacesSelection() {
+        val r = TextCleanup.spliceAtCursor("Send it Friday.", 8, 14, "Monday")
+        assertEquals("Send it Monday.", r.text)
+    }
+
+    @Test fun spliceWithReversedOrBadSelection() {
+        assertEquals("Send it Monday.", TextCleanup.spliceAtCursor("Send it Friday.", 14, 8, "Monday").text)
+        assertEquals("Hi. Ok.", TextCleanup.spliceAtCursor("Hi.", 99, 99, "Ok.").text)
+    }
 }

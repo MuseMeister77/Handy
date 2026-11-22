@@ -29,6 +29,20 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_WORDS, "").orEmpty()
         set(v) = sp.edit().putString(KEY_WORDS, v.trim()).apply()
 
+    /** Show the floating mic all the time, not only while a keyboard is open. */
+    var bubbleAlways: Boolean
+        get() = sp.getBoolean(KEY_BUBBLE_ALWAYS, false)
+        set(v) = sp.edit().putBoolean(KEY_BUBBLE_ALWAYS, v).apply()
+
+    /** Where the user last left the floating mic, in pixels; -1 = default. */
+    var bubbleX: Int
+        get() = sp.getInt(KEY_BUBBLE_X, -1)
+        set(v) = sp.edit().putInt(KEY_BUBBLE_X, v).apply()
+
+    var bubbleY: Int
+        get() = sp.getInt(KEY_BUBBLE_Y, -1)
+        set(v) = sp.edit().putInt(KEY_BUBBLE_Y, v).apply()
+
     val cleanupOptions: TextCleanup.Options
         get() = TextCleanup.Options(removeFillers, spokenPunctuation)
 
@@ -38,6 +52,12 @@ class Prefs(context: Context) {
             val words = customWords.split(',', '\n').map { it.trim() }.filter { it.isNotEmpty() }
             return if (words.isEmpty()) "" else words.joinToString(", ") + "."
         }
+
+    fun listen(l: SharedPreferences.OnSharedPreferenceChangeListener) =
+        sp.registerOnSharedPreferenceChangeListener(l)
+
+    fun unlisten(l: SharedPreferences.OnSharedPreferenceChangeListener) =
+        sp.unregisterOnSharedPreferenceChangeListener(l)
 
     fun history(): List<String> {
         val raw = sp.getString(KEY_HISTORY, null) ?: return emptyList()
@@ -67,6 +87,9 @@ class Prefs(context: Context) {
         private const val KEY_KEEP_HISTORY = "keep_history"
         private const val KEY_WORDS = "custom_words"
         private const val KEY_HISTORY = "history"
+        const val KEY_BUBBLE_ALWAYS = "bubble_always"
+        private const val KEY_BUBBLE_X = "bubble_x"
+        private const val KEY_BUBBLE_Y = "bubble_y"
         const val MAX_HISTORY = 50
     }
 }

@@ -183,9 +183,9 @@ class VoiceKeyboardService : InputMethodService() {
         recorder = null
         main.removeCallbacks(timerTick)
         val samples = r.stop()
-        if (isSilent(samples)) {
+        Dictation.precheck(samples, r.wasSilenced)?.let { early ->
             state = State.IDLE
-            status.setText(R.string.status_no_speech)
+            showResultStatus(early)
             render()
             return
         }
@@ -200,39 +200,45 @@ class VoiceKeyboardService : InputMethodService() {
         val vocabulary = prefs.vocabularyPrompt
         val options = prefs.cleanupOptions
         worker.execute {
-            val result: String? = try {
-                WhisperEngine.transcribe(this, samples, vocabulary)?.let { TextCleanup.clean(it, options) }
-            } catch (e: Throwable) {
-                Log.e(TAG, "Transcription failed", e)
-                null
-            }
+            val result = Dictation.transcribe(this, samples, vocabulary, options)
             main.post { onTranscribed(mySession, result) }
         }
     }
 
-    private fun onTranscribed(forSession: Int, text: String?) {
+    private fun onTranscribed(forSession: Int, result: DictationResult) {
         if (forSession != session) return
         state = State.IDLE
         val lost = targetLost
         targetLost = false
-        when {
-            text == null -> status.setText(R.string.status_error)
-            text.isBlank() -> status.setText(R.string.status_no_speech)
-            lost || currentInputConnection == null -> {
-                prefs.addToHistory(text)
-                status.setText(R.string.status_saved_to_history)
-            }
-            else -> {
-                val ic = currentInputConnection!!
-                val before = ic.getTextBeforeCursor(64, 0)
-                val toType = TextCleanup.fitToContext(text, before)
-                ic.commitText(toType, 1)
-                lastInserted = toType
-                prefs.addToHistory(text)
-                showIdleStatus()
-            }
+        if (result !is DictationResult.Text) {
+            showResultStatus(result)
+            render()
+            return
+        }
+        val text = result.text
+        val ic = currentInputConnection
+        if (lost || ic == null) {
+            prefs.addToHistory(text)
+            status.setText(R.string.status_saved_to_history)
+        } else {
+            val before = ic.getTextBeforeCursor(64, 0)
+            val toType = TextCleanup.fitToContext(text, before)
+            ic.commitText(toType, 1)
+            lastInserted = toType
+            prefs.addToHistory(text)
+            showIdleStatus()
         }
         render()
+    }
+
+    private fun showResultStatus(result: DictationResult) {
+        status.setText(
+            when (result) {
+                DictationResult.NoSpeech -> R.string.status_no_speech
+                DictationResult.MicBlocked -> R.string.status_mic_blocked
+                else -> R.string.status_error
+            },
+        )
     }
 
     private fun cancelRecording() {

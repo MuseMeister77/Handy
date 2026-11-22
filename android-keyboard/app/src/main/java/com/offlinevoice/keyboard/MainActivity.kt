@@ -1,6 +1,7 @@
 package com.offlinevoice.keyboard
 
 import android.Manifest
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -13,6 +14,7 @@ import android.provider.Settings
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsets
+import android.view.accessibility.AccessibilityManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
@@ -46,6 +48,17 @@ class MainActivity : Activity() {
             v.setPadding(v.paddingLeft, pad + top, v.paddingRight, pad + bottom)
             insets
         }
+
+        findViewById<Button>(R.id.btn_bubble).setOnClickListener {
+            if (!hasMic()) requestMic()
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+        findViewById<Button>(R.id.btn_app_info).setOnClickListener {
+            startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
+            )
+        }
+        bindSwitch(R.id.sw_bubble_always, prefs.bubbleAlways) { prefs.bubbleAlways = it }
 
         findViewById<Button>(R.id.btn_grant).setOnClickListener { requestMic() }
         findViewById<Button>(R.id.btn_enable).setOnClickListener {
@@ -107,8 +120,25 @@ class MainActivity : Activity() {
         requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQ_MIC)
     }
 
+    private fun hasMic(): Boolean =
+        checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+    private fun isBubbleEnabled(): Boolean =
+        getSystemService(AccessibilityManager::class.java)
+            .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            .any {
+                it.resolveInfo.serviceInfo.packageName == packageName &&
+                    it.resolveInfo.serviceInfo.name == FloatingMicService::class.java.name
+            }
+
     private fun renderSetup() {
-        val micOk = checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        val bubbleOk = isBubbleEnabled()
+        setStep(R.id.bubble_status, R.id.btn_bubble, bubbleOk, getString(R.string.bubble_step_todo))
+        val hint = if (bubbleOk) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.bubble_restricted).visibility = hint
+        findViewById<View>(R.id.btn_app_info).visibility = hint
+
+        val micOk = hasMic()
         val enabled = isKeyboardEnabled()
         val selected = isKeyboardSelected()
 

@@ -1,14 +1,22 @@
-# Offline Voice Keyboard (Android)
+# Spokify: offline voice typing for Android
 
-A voice keyboard for Android that works like Wispr Flow, but **fully offline**.
-Tap the mic, speak, tap again, and your words are typed into whatever app you
-are using: WhatsApp, Outlook, Teams, Notes, a browser form, anything with a
-text box.
+Spokify works like Wispr Flow, but **fully offline**. Hold the floating mic,
+speak, let go, and your words are typed into whatever app you are using:
+WhatsApp, Outlook, Teams, Notes, a browser form, anything with a text box. It
+works alongside your normal keyboard, so you never have to switch keyboards
+to talk.
 
 Speech recognition runs on the phone with OpenAI's Whisper model (through
 [whisper.cpp](https://github.com/ggml-org/whisper.cpp)). The app has **no
 internet permission**, so Android itself stops it from sending anything
 anywhere.
+
+There are two ways to dictate:
+
+| Way                                    | How it works                                                        | Best for                               |
+| -------------------------------------- | ------------------------------------------------------------------- | -------------------------------------- |
+| **Floating mic** (recommended)         | A bubble appears whenever any keyboard is open. Hold it to talk.    | Everyday use with your normal keyboard |
+| **Spokify Keyboard** (optional backup) | A voice-only keyboard you switch to. Tap the mic to start and stop. | Apps where the floating mic can't type |
 
 This folder is a separate app from the Handy desktop app in the rest of this
 repository. It shares the idea (local Whisper dictation), not the code.
@@ -21,8 +29,8 @@ You install the app from an APK file ("sideloading"). It isn't on the Play Store
 
 1. Get `app-release.apk`, either:
    - from the **Actions** tab on GitHub: open the latest _Android voice
-     keyboard_ run and download **offline-voice-keyboard-apk** under
-     _Artifacts_ (it downloads as a zip; the APK is inside), or
+     keyboard_ run and download **spokify-apk** under _Artifacts_ (it
+     downloads as a zip; the APK is inside), or
    - by building it yourself (see section 5).
 2. Copy the APK to your phone (or download it there) and tap it.
 3. If Android asks, allow your browser or file manager to **install unknown
@@ -30,29 +38,59 @@ You install the app from an APK file ("sideloading"). It isn't on the Play Store
 4. Tap **Install**. Google Play Protect may warn about an app from an unknown
    developer. That's expected for apps you build yourself.
 
-## 2. One-time setup (about a minute)
+## 2. One-time setup (about two minutes)
 
-Open **Offline Voice Keyboard** from your app drawer. The screen walks you
-through three steps:
+Open **Spokify** from your app drawer.
 
-| Step                    | What to do                                                        | Why                                                    |
-| ----------------------- | ----------------------------------------------------------------- | ------------------------------------------------------ |
-| 1. Allow the microphone | Tap **Allow microphone** → _While using the app_                  | The keyboard needs to hear you                         |
-| 2. Turn on the keyboard | Tap **Open keyboard settings** → switch on **Offline Voice** → OK | Android only lets you use keyboards you have turned on |
-| 3. Switch to it         | Tap **Choose keyboard** → **Offline Voice**                       | Makes it the keyboard shown now                        |
+### Floating mic
 
-Android shows a standard warning in step 2 that a keyboard "may be able to
-collect all the text you type". Every keyboard gets this warning. This one has
-no internet permission, so it has no way to send text anywhere.
+1. Under **Floating mic**, tap **Open accessibility settings**. Allow the
+   microphone if Android asks first (_While using the app_).
+2. In the list, tap **Installed apps** / **Downloaded apps** if you see it,
+   then **Spokify floating mic**, and switch it on.
+3. **If the switch is greyed out** ("Restricted setting"): Android does this
+   for apps installed outside the Play Store. Go back to Spokify, tap **Open
+   App info**, tap **⋮** (top right) → **Allow restricted settings**, then
+   repeat step 2.
+
+Android warns that an accessibility service can see your screen. Spokify uses
+it only to find the text box you're typing in and put your words at the cursor.
+With no internet permission it can't send anything anywhere.
+
+### Spokify Keyboard (optional)
+
+| Step                    | What to do                                                           | Why                                                    |
+| ----------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1. Allow the microphone | Tap **Allow microphone** → _While using the app_                     | Spokify needs to hear you                              |
+| 2. Turn on the keyboard | Tap **Open keyboard settings** → switch on **Spokify Keyboard** → OK | Android only lets you use keyboards you have turned on |
+| 3. Switch to it         | Tap **Choose keyboard** → **Spokify Keyboard**                       | Makes it the keyboard shown now                        |
 
 ## 3. Daily use
 
-1. Tap into any text box. If your normal keyboard appears, tap the **keyboard
-   icon** at the bottom of the screen (or the 🌐 key on Gboard) and pick
-   **Offline Voice**.
-2. Tap the **blue mic** and speak. The button turns red and the bar shows your
-   voice level.
-3. Tap the **red ■** when done. After a second or two the text is typed in.
+### Floating mic
+
+1. Tap into any text box. Your normal keyboard opens and the **mic bubble**
+   appears on the edge of the screen.
+2. **Hold** the bubble and speak. It turns red and pulses with your voice.
+3. **Let go.** After a second or two the text is typed at your cursor.
+
+| Gesture                                 | What it does                                                         |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| Hold                                    | Talk (recording starts after a short moment, with a little buzz)     |
+| Let go                                  | Stop and type the text                                               |
+| While holding, slide far off and let go | Cancel                                                               |
+| Drag straight away                      | Move the bubble. It snaps to the nearest edge and remembers the spot |
+
+To keep the bubble on screen even with no keyboard open, turn on **Always
+show the bubble**. If an app doesn't accept typed-in text, Spokify tries to
+paste it, and otherwise leaves it on the clipboard and tells you. Spokify never
+types into password boxes.
+
+### Spokify Keyboard
+
+1. Tap into a text box and switch to **Spokify Keyboard** (keyboard icon at
+   the bottom of the screen, or the 🌐 key on Gboard).
+2. Tap the **mic** and speak. Tap **■** when done.
 
 | Key             | What it does                                                     |
 | --------------- | ---------------------------------------------------------------- |
@@ -79,13 +117,14 @@ no internet permission, so it has no way to send text anywhere.
 
 These are things you can check yourself, for example for an IT or audit review:
 
-| Control             | Evidence                                                                                                                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No network access   | `AndroidManifest.xml` asks only for `RECORD_AUDIO`. On the phone: _Settings → Apps → Offline Voice Keyboard → Permissions_ shows only Microphone. The GitHub build fails if the APK ever asks for `INTERNET`. |
-| Audio is not stored | Audio is kept in memory only and released after each dictation (`AudioRecorder.kt`).                                                                                                                          |
-| No cloud backup     | Android backup and device-to-device transfer are turned off for the app (`data_extraction_rules.xml`).                                                                                                        |
-| History is optional | _Settings → Keep history_. Turning it off deletes saved items.                                                                                                                                                |
-| Pinned components   | The whisper.cpp source and the model file are checked against fixed SHA-256 values during the build (`app/build.gradle.kts`).                                                                                 |
+| Control               | Evidence                                                                                                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No network access     | `AndroidManifest.xml` asks only for `RECORD_AUDIO`. On the phone: _Settings → Apps → Spokify → Permissions_ shows only Microphone. The GitHub build fails if the APK ever asks for `INTERNET`.  |
+| Audio is not stored   | Audio is kept in memory only and released after each dictation (`AudioRecorder.kt`).                                                                                                            |
+| No cloud backup       | Android backup and device-to-device transfer are turned off for the app (`data_extraction_rules.xml`).                                                                                          |
+| Limited screen access | The floating mic only listens for window and focus events and reads the focused text box, to type at the cursor (`floating_mic_service.xml`, `FloatingMicService.kt`). It skips password boxes. |
+| History is optional   | _Settings → Keep history_. Turning it off deletes saved items.                                                                                                                                  |
+| Pinned components     | The whisper.cpp source and the model file are checked against fixed SHA-256 values during the build (`app/build.gradle.kts`).                                                                   |
 
 ## 5. Building it yourself
 
@@ -137,6 +176,8 @@ Mic (16 kHz, in memory) → Whisper base.en (on-device, whisper.cpp)
 | `WhisperEngine.kt`, `cpp/whisper_jni.cpp` | Bridge to whisper.cpp                                              |
 | `ModelManager.kt`                         | Copies the bundled model out of the APK on first use               |
 | `TextCleanup.kt`                          | Filler removal, spoken punctuation, spacing/capitals (unit tested) |
+| `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps       |
+| `Dictation.kt`                            | Shared steps: checks, transcription, cleanup                       |
 | `MainActivity.kt`                         | Setup steps, test box, settings, history                           |
 
 whisper.cpp is compiled once per ARM CPU feature level. On first use it checks

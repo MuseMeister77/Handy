@@ -153,4 +153,31 @@ object TextCleanup {
         if (word.lowercase() !in COMMON_STARTERS) return text
         return word.lowercase() + text.substring(end)
     }
+
+    /** Result of putting dictated text into existing text at the cursor. */
+    data class Splice(val text: String, val cursor: Int, val inserted: String)
+
+    /**
+     * Inserts [dictated] into [current] at the selection (replacing any
+     * selected text). Bad or missing selection values mean "at the end".
+     */
+    fun spliceAtCursor(current: String, selStart: Int, selEnd: Int, dictated: String): Splice {
+        var start = selStart
+        var end = selEnd
+        if (start < 0 || end < 0 || start > current.length || end > current.length) {
+            start = current.length
+            end = current.length
+        }
+        if (start > end) start = end.also { end = start }
+        val before = current.substring(0, start)
+        val after = current.substring(end)
+        var piece = fitToContext(dictated, before)
+        // Keep a space between the dictation and a word right after the cursor.
+        if (piece.isNotEmpty() && after.isNotEmpty() && !piece.last().isWhitespace() &&
+            after.first().isLetterOrDigit()
+        ) {
+            piece += " "
+        }
+        return Splice(before + piece + after, before.length + piece.length, piece)
+    }
 }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.Build
 import kotlin.math.sqrt
 
 /**
@@ -26,6 +27,13 @@ class AudioRecorder(
     private var totalSamples = 0
 
     val isRecording: Boolean get() = recording
+
+    /**
+     * True if Android silenced the last recording (it does this when an app
+     * records from the background without being allowed to).
+     */
+    var wasSilenced = false
+        private set
 
     /** Starts recording. Returns false if the microphone could not be opened. */
     @SuppressLint("MissingPermission") // checked by the caller before starting
@@ -68,6 +76,7 @@ class AudioRecorder(
             chunks.clear()
             totalSamples = 0
         }
+        wasSilenced = false
         record = r
         recording = true
         thread = Thread({ loop(r) }, "mic-capture").apply { start() }
@@ -101,6 +110,9 @@ class AudioRecorder(
         thread?.join(1000)
         thread = null
         record?.let {
+            if (Build.VERSION.SDK_INT >= 29) {
+                wasSilenced = it.activeRecordingConfiguration?.isClientSilenced == true
+            }
             try { it.stop() } catch (_: IllegalStateException) {}
             it.release()
         }

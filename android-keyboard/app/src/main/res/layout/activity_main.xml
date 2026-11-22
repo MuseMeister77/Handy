@@ -28,6 +28,30 @@
             android:textColor="@color/status_text"
             android:textSize="15sp" />
 
+        <!-- Floating mic -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_bubble" />
+
+        <LinearLayout style="@style/Card">
+            <TextView style="@style/SettingHint" android:text="@string/bubble_intro" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/bubble_step_title" />
+            <TextView android:id="@+id/bubble_status" style="@style/StepStatus" />
+            <Button android:id="@+id/btn_bubble" style="@style/ActionButton" android:text="@string/bubble_step_button" />
+            <TextView
+                android:id="@+id/bubble_restricted"
+                style="@style/SettingHint"
+                android:layout_marginTop="8dp"
+                android:text="@string/bubble_restricted" />
+            <Button android:id="@+id/btn_app_info" style="@style/ActionButton" android:text="@string/bubble_app_info" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_bubble_always" style="@style/SettingSwitch" android:text="@string/setting_bubble_always" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_bubble_always_hint" />
+        </LinearLayout>
+
         <!-- Setup -->
         <TextView style="@style/SectionTitle" android:text="@string/section_setup" />
 
