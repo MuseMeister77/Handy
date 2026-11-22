@@ -46,7 +46,7 @@ object TextCleanup {
     }
 
     fun clean(raw: String, options: Options = Options()): String {
-        var t = raw.replace(ANNOTATION, " ")
+        var t = removeRepeatedSentences(raw.replace(ANNOTATION, " "))
         if (options.removeFillers) {
             t = FILLER.replace(t) { m ->
                 val (leadComma, sep, trail) = m.destructured
@@ -65,6 +65,27 @@ object TextCleanup {
             }
         }
         return normalise(t)
+    }
+
+    private val SENTENCE = Regex("""[^.!?]+[.!?]*""")
+
+    /**
+     * Whisper occasionally outputs the same sentence twice in a row (a known
+     * glitch). People almost never repeat a whole sentence word for word
+     * straight away, so a back-to-back duplicate of a sentence of 3+ words
+     * is dropped.
+     */
+    internal fun removeRepeatedSentences(t: String): String {
+        val out = StringBuilder()
+        var previousKey = ""
+        for (m in SENTENCE.findAll(t)) {
+            val sentence = m.value
+            val key = sentence.lowercase().replace(Regex("[^a-z0-9 ]"), "").trim().replace(Regex(" +"), " ")
+            if (key.isNotEmpty() && key == previousKey && key.count { it == ' ' } >= 2) continue
+            out.append(sentence)
+            if (key.isNotEmpty()) previousKey = key
+        }
+        return out.toString()
     }
 
     private const val MARK_START = '\u0001'

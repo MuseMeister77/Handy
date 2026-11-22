@@ -59,6 +59,8 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
 
     private var state = State.IDLE
     private var recorder: AudioRecorder? = null
+    /** Transcribes the current dictation piece by piece while recording. */
+    private var stream: StreamingTranscriber? = null
     /** The text box that had focus when recording started. */
     private var target: AccessibilityNodeInfo? = null
     private var keyboardOpen = false
@@ -110,6 +112,8 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
         prefs.unlisten(this)
         recorder?.cancel()
         recorder = null
+        stream?.cancel()
+        stream = null
         main.removeCallbacksAndMessages(null)
         bubble?.let { runCatching { wm.removeView(it) } }
         bubble = null
@@ -293,15 +297,19 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
             return
         }
         target = findFocusedTextBox()
+        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription)
         val r = AudioRecorder(
             onLevel = { rms -> main.post { showLevel(rms) } },
             onMaxDurationReached = { main.post { if (state == State.RECORDING) stopAndTranscribe() } },
+            onFrame = st::feed,
         )
         if (!r.start()) {
+            st.cancel()
             toast(R.string.status_mic_busy)
             return
         }
         recorder = r
+        stream = st
         state = State.RECORDING
         render()
     }
@@ -309,8 +317,11 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
     private fun stopAndTranscribe() {
         val r = recorder ?: return
         recorder = null
+        val st = stream ?: return
+        stream = null
         val samples = r.stop()
         Dictation.precheck(samples, r.wasSilenced)?.let { early ->
+            st.cancel()
             state = State.IDLE
             showResult(early)
             render()
@@ -318,10 +329,7 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
         }
         state = State.TRANSCRIBING
         render()
-        val vocabulary = prefs.vocabularyPrompt
-        val options = prefs.cleanupOptions
-        worker.execute {
-            val result = Dictation.transcribe(this, samples, vocabulary, options)
+        st.finish(prefs.cleanupOptions) { result ->
             main.post {
                 state = State.IDLE
                 if (result is DictationResult.Text) {
@@ -339,6 +347,8 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
     private fun cancelRecording() {
         recorder?.cancel()
         recorder = null
+        stream?.cancel()
+        stream = null
         target = null
         state = State.IDLE
         render()

@@ -14,6 +14,8 @@ import kotlin.math.sqrt
 class AudioRecorder(
     private val onLevel: (Float) -> Unit,
     private val onMaxDurationReached: () -> Unit,
+    /** Every frame of audio as it arrives (on the capture thread). */
+    private val onFrame: (ShortArray) -> Unit = {},
 ) {
     companion object {
         const val SAMPLE_RATE = 16_000
@@ -45,7 +47,9 @@ class AudioRecorder(
             AudioFormat.ENCODING_PCM_16BIT,
         )
         if (minBuf <= 0) return false
-        val bufSize = maxOf(minBuf, SAMPLE_RATE / 5 * 2) // at least 200 ms
+        // 1 s of headroom, so audio isn't dropped while earlier sentences are
+        // being transcribed on the same CPU.
+        val bufSize = maxOf(minBuf, SAMPLE_RATE * 2)
         val r = try {
             AudioRecord(
                 MediaRecorder.AudioSource.VOICE_RECOGNITION,
@@ -97,6 +101,7 @@ class AudioRecorder(
                 reachedMax = totalSamples >= maxSamples
             }
             onLevel(rms(chunk, n))
+            onFrame(chunk)
             if (reachedMax) {
                 onMaxDurationReached()
                 break

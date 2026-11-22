@@ -108,8 +108,10 @@ types into password boxes.
   _not_ a command, so "the reporting period" types normally.)
 - Add names and jargon under **Settings → Custom words** (for example _Oracle,
   OTC, AR aging, vendor master, DSO_) to help Whisper spell them right.
-- One dictation can be up to 5 minutes long. Shorter clips (under 30 seconds)
-  feel quickest.
+- One dictation can be up to 5 minutes long. With **Settings → Faster results
+  while you speak** (on by default), Spokify turns each sentence into text
+  while you're still talking, so even long dictations appear about a second
+  after you stop. Pausing briefly between sentences helps it split cleanly.
 - If the keyboard closes while you are dictating, the text is not lost: it is
   saved under **History** in the app. Tap it there to copy it.
 
@@ -164,10 +166,23 @@ settings and history. To keep one signature:
 ## 6. How it works
 
 ```
-Mic (16 kHz, in memory) → Whisper base.en (on-device, whisper.cpp)
-  → cleanup (filler words, spoken punctuation, spacing/capitals)
+Mic (16 kHz, in memory) → split at pauses while you talk (SpeechChunker)
+  → each piece → Whisper base.en (on-device, whisper.cpp), in the background
+  → join + cleanup (filler words, spoken punctuation, spacing/capitals)
   → typed into the focused text box
 ```
+
+**Speed.** Two things keep the wait after you stop short:
+
+1. Sentences are transcribed while you're still speaking, so at the end only
+   the last one (usually a few seconds of audio) is left.
+2. Whisper normally processes a fixed 30-second window, however short the
+   clip. Spokify sizes the window to each piece instead (plus a 4-second
+   margin, which avoids a Whisper glitch that repeats a sentence). In testing
+   this made a 4-second clip about 4× faster with the same text.
+
+In testing, 43 seconds of speech took 2.8 s to process in one go after
+release; with this approach the last sentence took about 0.3 s.
 
 | File                                      | Role                                                               |
 | ----------------------------------------- | ------------------------------------------------------------------ |
@@ -177,7 +192,9 @@ Mic (16 kHz, in memory) → Whisper base.en (on-device, whisper.cpp)
 | `ModelManager.kt`                         | Copies the bundled model out of the APK on first use               |
 | `TextCleanup.kt`                          | Filler removal, spoken punctuation, spacing/capitals (unit tested) |
 | `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps       |
-| `Dictation.kt`                            | Shared steps: checks, transcription, cleanup                       |
+| `Dictation.kt`                            | Quick checks before transcribing (silence, blocked mic)            |
+| `SpeechChunker.kt`                        | Splits live audio at pauses (unit tested)                          |
+| `StreamingTranscriber.kt`                 | Transcribes pieces in the background and joins them                |
 | `MainActivity.kt`                         | Setup steps, test box, settings, history                           |
 
 whisper.cpp is compiled once per ARM CPU feature level. On first use it checks

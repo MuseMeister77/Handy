@@ -29,6 +29,11 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_WORDS, "").orEmpty()
         set(v) = sp.edit().putString(KEY_WORDS, v.trim()).apply()
 
+    /** Transcribe while the person is still speaking, for a shorter wait at the end. */
+    var liveTranscription: Boolean
+        get() = sp.getBoolean(KEY_LIVE, true)
+        set(v) = sp.edit().putBoolean(KEY_LIVE, v).apply()
+
     /** Show the floating mic all the time, not only while a keyboard is open. */
     var bubbleAlways: Boolean
         get() = sp.getBoolean(KEY_BUBBLE_ALWAYS, false)
@@ -87,6 +92,7 @@ class Prefs(context: Context) {
         private const val KEY_KEEP_HISTORY = "keep_history"
         private const val KEY_WORDS = "custom_words"
         private const val KEY_HISTORY = "history"
+        private const val KEY_LIVE = "live_transcription"
         const val KEY_BUBBLE_ALWAYS = "bubble_always"
         private const val KEY_BUBBLE_X = "bubble_x"
         private const val KEY_BUBBLE_Y = "bubble_y"

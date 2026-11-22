@@ -120,4 +120,20 @@ class TextCleanupTest {
         assertEquals("Send it Monday.", TextCleanup.spliceAtCursor("Send it Friday.", 14, 8, "Monday").text)
         assertEquals("Hi. Ok.", TextCleanup.spliceAtCursor("Hi.", 99, 99, "Ok.").text)
     }
+
+    @Test fun dropsWhisperRepeatedSentence() {
+        assertEquals(
+            "Please make sure your access is set up.",
+            clean(" Please make sure your access is set up. Please make sure your access is set up."),
+        )
+        assertEquals(
+            "Okay. Thanks. Thanks for the update.",
+            clean("Okay. Thanks. Thanks for the update."),
+        )
+    }
+
+    @Test fun keepsShortDeliberateRepeats() {
+        assertEquals("No. No. Thank you.", clean("No. No. Thank you."))
+        assertEquals("Yes, yes, that works.", clean("Yes, yes, that works."))
+    }
 }

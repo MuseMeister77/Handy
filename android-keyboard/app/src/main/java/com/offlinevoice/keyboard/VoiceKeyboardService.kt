@@ -37,6 +37,8 @@ class VoiceKeyboardService : InputMethodService() {
 
     private var state = State.IDLE
     private var recorder: AudioRecorder? = null
+    /** Transcribes the current dictation piece by piece while recording. */
+    private var stream: StreamingTranscriber? = null
     private var recordingStartedAt = 0L
     /** Incremented to discard a transcription whose field has gone away. */
     private var session = 0
@@ -131,6 +133,8 @@ class VoiceKeyboardService : InputMethodService() {
     override fun onDestroy() {
         recorder?.cancel()
         recorder = null
+        stream?.cancel()
+        stream = null
         main.removeCallbacksAndMessages(null)
         worker.shutdown()
         super.onDestroy()
@@ -154,15 +158,19 @@ class VoiceKeyboardService : InputMethodService() {
             )
             return
         }
+        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription)
         val r = AudioRecorder(
             onLevel = { rms -> main.post { showLevel(rms) } },
             onMaxDurationReached = { main.post { if (state == State.RECORDING) stopAndTranscribe() } },
+            onFrame = st::feed,
         )
         if (!r.start()) {
+            st.cancel()
             status.setText(R.string.status_mic_busy)
             return
         }
         recorder = r
+        stream = st
         state = State.RECORDING
         recordingStartedAt = SystemClock.elapsedRealtime()
         main.post(timerTick)
@@ -182,8 +190,11 @@ class VoiceKeyboardService : InputMethodService() {
         val r = recorder ?: return
         recorder = null
         main.removeCallbacks(timerTick)
+        val st = stream ?: return
+        stream = null
         val samples = r.stop()
         Dictation.precheck(samples, r.wasSilenced)?.let { early ->
+            st.cancel()
             state = State.IDLE
             showResultStatus(early)
             render()
@@ -197,10 +208,7 @@ class VoiceKeyboardService : InputMethodService() {
 
         targetLost = false
         val mySession = ++session
-        val vocabulary = prefs.vocabularyPrompt
-        val options = prefs.cleanupOptions
-        worker.execute {
-            val result = Dictation.transcribe(this, samples, vocabulary, options)
+        st.finish(prefs.cleanupOptions) { result ->
             main.post { onTranscribed(mySession, result) }
         }
     }
@@ -244,6 +252,8 @@ class VoiceKeyboardService : InputMethodService() {
     private fun cancelRecording() {
         recorder?.cancel()
         recorder = null
+        stream?.cancel()
+        stream = null
         main.removeCallbacks(timerTick)
         state = State.IDLE
         showIdleStatus()

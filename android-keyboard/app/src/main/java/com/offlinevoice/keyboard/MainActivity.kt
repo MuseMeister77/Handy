@@ -68,6 +68,7 @@ class MainActivity : Activity() {
             getSystemService(InputMethodManager::class.java).showInputMethodPicker()
         }
 
+        bindSwitch(R.id.sw_live, prefs.liveTranscription) { prefs.liveTranscription = it }
         bindSwitch(R.id.sw_fillers, prefs.removeFillers) { prefs.removeFillers = it }
         bindSwitch(R.id.sw_punct, prefs.spokenPunctuation) { prefs.spokenPunctuation = it }
         bindSwitch(R.id.sw_history, prefs.keepHistory) {

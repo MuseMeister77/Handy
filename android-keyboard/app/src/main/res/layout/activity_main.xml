@@ -96,6 +96,11 @@
 
         <LinearLayout style="@style/Card">
 
+            <Switch android:id="@+id/sw_live" style="@style/SettingSwitch" android:text="@string/setting_live" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_live_hint" />
+
+            <View style="@style/Divider" />
+
             <Switch android:id="@+id/sw_fillers" style="@style/SettingSwitch" android:text="@string/setting_fillers" />
             <TextView style="@style/SettingHint" android:text="@string/setting_fillers_hint" />
 

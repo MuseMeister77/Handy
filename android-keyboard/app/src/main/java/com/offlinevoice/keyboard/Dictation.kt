@@ -1,8 +1,5 @@
 package com.offlinevoice.keyboard
 
-import android.content.Context
-import android.util.Log
-
 /** Outcome of one dictation, shared by the keyboard and the floating mic. */
 sealed class DictationResult {
     data class Text(val text: String) : DictationResult()
@@ -13,8 +10,6 @@ sealed class DictationResult {
 }
 
 object Dictation {
-    private const val TAG = "Dictation"
-
     /**
      * Quick checks before the slow part. Returns a final result if the clip
      * should not be transcribed, or null to go ahead.
@@ -25,25 +20,5 @@ object Dictation {
             DictationResult.MicBlocked
         isSilent(samples) -> DictationResult.NoSpeech
         else -> null
-    }
-
-    /** Speech to cleaned-up text. Slow: call it off the main thread. */
-    fun transcribe(
-        context: Context,
-        samples: FloatArray,
-        vocabulary: String,
-        options: TextCleanup.Options,
-    ): DictationResult = try {
-        val raw = WhisperEngine.transcribe(context, samples, vocabulary)
-        when {
-            raw == null -> DictationResult.Failed
-            else -> {
-                val text = TextCleanup.clean(raw, options)
-                if (text.isBlank()) DictationResult.NoSpeech else DictationResult.Text(text)
-            }
-        }
-    } catch (e: Throwable) {
-        Log.e(TAG, "Transcription failed", e)
-        DictationResult.Failed
     }
 }

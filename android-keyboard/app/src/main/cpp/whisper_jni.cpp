@@ -4,6 +4,7 @@
 #include <android/log.h>
 #include <jni.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -125,6 +126,13 @@ Java_com_offlinevoice_keyboard_WhisperEngine_nativeTranscribe(JNIEnv *env, jclas
     p.suppress_nst = true;  // drop "[MUSIC]"-style non-speech tokens
     p.temperature_inc = 0.2f;
     if (!prompt_str.empty()) p.initial_prompt = prompt_str.c_str();
+
+    // Whisper always works on a 30-second window. Sizing the window to the
+    // clip instead (50 positions per second) makes short clips several times
+    // faster with the same text. The 4-second margin matters: with a 2-second
+    // margin Whisper sometimes repeated a sentence in testing.
+    const int frames = static_cast<int>(pcm.size() / 320);
+    p.audio_ctx = std::min(1500, frames + 200);
 
     if (whisper_full(ctx, p, pcm.data(), static_cast<int>(pcm.size())) != 0) {
         LOGW("whisper_full failed");
