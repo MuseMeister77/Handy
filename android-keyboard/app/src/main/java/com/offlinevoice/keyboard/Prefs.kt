@@ -29,11 +29,6 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_WORDS, "").orEmpty()
         set(v) = sp.edit().putString(KEY_WORDS, v.trim()).apply()
 
-    /** Auto-detect English or Malay, or always use one of them. */
-    var languageMode: LanguageMode
-        get() = LanguageMode.entries.firstOrNull { it.key == sp.getString(KEY_LANGUAGE, null) } ?: LanguageMode.AUTO
-        set(v) = sp.edit().putString(KEY_LANGUAGE, v.key).apply()
-
     /** Transcribe while the person is still speaking, for a shorter wait at the end. */
     var liveTranscription: Boolean
         get() = sp.getBoolean(KEY_LIVE, true)
@@ -98,16 +93,9 @@ class Prefs(context: Context) {
         private const val KEY_WORDS = "custom_words"
         private const val KEY_HISTORY = "history"
         private const val KEY_LIVE = "live_transcription"
-        private const val KEY_LANGUAGE = "language"
         const val KEY_BUBBLE_ALWAYS = "bubble_always"
         private const val KEY_BUBBLE_X = "bubble_x"
         private const val KEY_BUBBLE_Y = "bubble_y"
         const val MAX_HISTORY = 50
     }
-}
-
-enum class LanguageMode(val key: String, val fixed: SpeechLanguage?) {
-    AUTO("auto", null),
-    ENGLISH("en", SpeechLanguage.ENGLISH),
-    MALAY("ms", SpeechLanguage.MALAY),
 }

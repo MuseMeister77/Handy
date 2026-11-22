@@ -96,20 +96,6 @@
 
         <LinearLayout style="@style/Card">
 
-            <TextView style="@style/StepTitle" android:text="@string/setting_language" />
-            <RadioGroup
-                android:id="@+id/lang_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-                <RadioButton android:id="@+id/lang_auto" style="@style/SettingSwitch" android:text="@string/lang_auto" />
-                <RadioButton android:id="@+id/lang_en" style="@style/SettingSwitch" android:text="@string/lang_en" />
-                <RadioButton android:id="@+id/lang_ms" style="@style/SettingSwitch" android:text="@string/lang_ms" />
-            </RadioGroup>
-            <TextView style="@style/SettingHint" android:text="@string/setting_language_hint" />
-
-            <View style="@style/Divider" />
-
             <Switch android:id="@+id/sw_live" style="@style/SettingSwitch" android:text="@string/setting_live" />
             <TextView style="@style/SettingHint" android:text="@string/setting_live_hint" />
 

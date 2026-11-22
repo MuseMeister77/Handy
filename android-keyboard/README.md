@@ -1,4 +1,4 @@
-# Spokify: offline voice typing for Android (English and Bahasa Melayu)
+# Spokify: offline voice typing for Android
 
 Spokify works like Wispr Flow, but **fully offline**. Hold the floating mic,
 speak, let go, and your words are typed into whatever app you are using:
@@ -108,12 +108,6 @@ types into password boxes.
   _not_ a command, so "the reporting period" types normally.)
 - Add names and jargon under **Settings → Custom words** (for example _Oracle,
   OTC, AR aging, vendor master, DSO_) to help Whisper spell them right.
-- **Languages:** under **Settings → Language** choose **Auto-detect**
-  (default), **English** or **Bahasa Melayu**. Auto-detect listens to the first
-  few seconds of each dictation and uses that language for the whole of it.
-  In Malay, say **"koma"**, **"noktah"**, **"tanda soal"**, **"tanda seru"**,
-  **"baris baru"** or **"perenggan baru"** for punctuation (the English
-  commands work too).
 - One dictation can be up to 5 minutes long. With **Settings → Faster results
   while you speak** (on by default), Spokify turns each sentence into text
   while you're still talking, so even long dictations appear about a second
@@ -145,15 +139,12 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 # APK: app/build/outputs/apk/release/app-release.apk
 ```
 
-The first build downloads three things (about 250 MB) into `.downloads/` and
+The first build downloads two things (about 60 MB) into `.downloads/` and
 checks their SHA-256:
 
 - whisper.cpp **v1.8.3** source (from the `whisper-rs-sys` crate on crates.io,
   which ships an unmodified copy of upstream)
-- the Whisper **base.en** model, 5-bit quantised (`ggml-base.en-q5_1.bin`, 57 MB),
-  for English
-- the multilingual Whisper **small** model, 5-bit quantised
-  (`ggml-small-q5_1.bin`, 181 MB), for Bahasa Melayu and language detection
+- the Whisper **base.en** model, 5-bit quantised (`ggml-base.en-q5_1.bin`, 57 MB)
 
 To install over USB: `adb install -r app/build/outputs/apk/release/app-release.apk`.
 
@@ -203,7 +194,6 @@ release; with this approach the last sentence took about 0.3 s.
 | `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps       |
 | `Dictation.kt`                            | Quick checks before transcribing (silence, blocked mic)            |
 | `SpeechChunker.kt`                        | Splits live audio at pauses (unit tested)                          |
-| `DetectionWindow.kt`                      | Collects the first seconds of speech for the English/Malay check   |
 | `StreamingTranscriber.kt`                 | Transcribes pieces in the background and joins them                |
 | `MainActivity.kt`                         | Setup steps, test box, settings, history                           |
 
@@ -213,19 +203,13 @@ phones get the speed-ups and older ones still work.
 
 ## 7. Known limitations
 
-- **English and Bahasa Melayu only.** Auto-detect chooses between just these
-  two, once per dictation, from the first few seconds of speech. If you switch
-  language halfway through one dictation, the rest is still treated as the
-  first language. Mixing English words into Malay sentences is fine.
-- **Malay is slower than English.** Malay uses the larger multilingual model,
-  roughly 3–4× slower than the English one. Most of that work happens while
-  you're still talking.
-- **Text appears when you stop**, not word by word while you speak.
+- **English only.** It uses the English-only `base.en` model.
+- **Not live.** Text appears after you stop, not while you speak.
 - **Cleanup is rule-based.** Unlike Wispr Flow's cloud AI it doesn't rewrite
   or reformat your sentences. It removes fillers and handles spoken
   punctuation.
 - **64-bit ARM phones only** (`arm64-v8a`), which covers practically every
   phone sold since 2017.
-- **Size.** The app is about 250 MB because both speech models are built in.
-  The first dictation after the phone restarts takes a few seconds longer
-  while the models load.
+- **Speed depends on the phone.** Expect roughly 1–3 seconds for a 10-second
+  clip on a mid-range phone from the last few years. The first dictation after
+  the phone restarts takes about a second longer while the model loads.

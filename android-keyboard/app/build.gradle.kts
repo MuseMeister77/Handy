@@ -19,15 +19,10 @@ plugins {
 val whisperArchiveUrl = "https://static.crates.io/crates/whisper-rs-sys/whisper-rs-sys-0.15.0.crate"
 val whisperArchiveSha256 = "6986c0fe081241d391f09b9a071fbcbb59720c3563628c3c829057cf69f2a56f"
 
-// Two Whisper models, both 5-bit quantised:
-// - "base.en" (~57 MB): English only, fast. Used for English.
-// - "small" (~181 MB): multilingual. Used for Bahasa Melayu, and to tell
-//   English from Malay when the language is set to auto-detect.
-data class Model(val file: String, val sha256: String) {
-    val url get() = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$file"
-}
-val englishModel = Model("ggml-base.en-q5_1.bin", "4baf70dd0d7c4247ba2b81fafd9c01005ac77c2f9ef064e00dcf195d0e2fdd2f")
-val multilingualModel = Model("ggml-small-q5_1.bin", "ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb")
+// Whisper "base.en" model, 5-bit quantised (~57 MB). English only.
+val modelFileName = "ggml-base.en-q5_1.bin"
+val modelUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$modelFileName"
+val modelSha256 = "4baf70dd0d7c4247ba2b81fafd9c01005ac77c2f9ef064e00dcf195d0e2fdd2f"
 
 val downloadsDir = rootProject.layout.projectDirectory.dir(".downloads")
 val whisperSrcDir = layout.buildDirectory.dir("third_party/whisper")
@@ -86,21 +81,14 @@ val extractWhisper by tasks.registering(Sync::class) {
     into(whisperSrcDir)
 }
 
-val downloadEnglishModel by tasks.registering(DownloadVerified::class) {
-    url.set(englishModel.url)
-    sha256.set(englishModel.sha256)
-    dest.set(downloadsDir.file(englishModel.file))
-}
-
-val downloadMultilingualModel by tasks.registering(DownloadVerified::class) {
-    url.set(multilingualModel.url)
-    sha256.set(multilingualModel.sha256)
-    dest.set(downloadsDir.file(multilingualModel.file))
+val downloadModel by tasks.registering(DownloadVerified::class) {
+    url.set(modelUrl)
+    sha256.set(modelSha256)
+    dest.set(downloadsDir.file(modelFileName))
 }
 
 val stageModel by tasks.registering(Sync::class) {
-    from(downloadEnglishModel.flatMap { it.dest })
-    from(downloadMultilingualModel.flatMap { it.dest })
+    from(downloadModel.flatMap { it.dest })
     into(modelAssetsDir.map { it.dir("models") })
 }
 
@@ -120,11 +108,10 @@ android {
         applicationId = "com.offlinevoice.keyboard"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "1.4.0"
+        versionCode = 5
+        versionName = "1.3.1"
 
-        buildConfigField("String", "MODEL_ENGLISH", "\"${englishModel.file}\"")
-        buildConfigField("String", "MODEL_MULTILINGUAL", "\"${multilingualModel.file}\"")
+        buildConfigField("String", "MODEL_FILE", "\"$modelFileName\"")
 
         ndk {
             // Practically every Android phone sold since 2017 is 64-bit ARM.

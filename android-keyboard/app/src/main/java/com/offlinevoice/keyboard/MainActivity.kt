@@ -19,7 +19,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.RadioGroup
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -89,20 +88,7 @@ class MainActivity : Activity() {
             renderHistory()
         }
 
-        findViewById<TextView>(R.id.about).text =
-            getString(R.string.about_text, ModelManager.englishModel, ModelManager.multilingualModel)
-
-        val langButtons = mapOf(
-            LanguageMode.AUTO to R.id.lang_auto,
-            LanguageMode.ENGLISH to R.id.lang_en,
-            LanguageMode.MALAY to R.id.lang_ms,
-        )
-        findViewById<RadioGroup>(R.id.lang_group).apply {
-            check(langButtons.getValue(prefs.languageMode))
-            setOnCheckedChangeListener { _, id ->
-                langButtons.entries.firstOrNull { it.value == id }?.let { prefs.languageMode = it.key }
-            }
-        }
+        findViewById<TextView>(R.id.about).text = getString(R.string.about_text, ModelManager.modelName)
     }
 
     override fun onResume() {

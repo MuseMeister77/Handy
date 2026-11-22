@@ -20,19 +20,10 @@ class StreamingTranscriber(
     private val vocabulary: String,
     /** False = old behaviour: everything is transcribed in one go at the end. */
     live: Boolean = true,
-    /** A fixed language, or null to detect English or Malay from the speech. */
-    fixedLanguage: SpeechLanguage? = null,
 ) {
     private val parts = ArrayList<String>() // touched only on the worker thread
     private var anyFailed = false // worker thread only
     @Volatile private var cancelled = false
-
-    /**
-     * The dictation's language. With auto-detect it's decided once, from the
-     * first few seconds of speech, while the person is still talking.
-     */
-    @Volatile private var language: SpeechLanguage? = fixedLanguage
-    private val detectionWindow = if (fixedLanguage == null) DetectionWindow() else null
 
     private val chunker = if (live) {
         SpeechChunker(onChunk = { submit(it) })
@@ -45,25 +36,7 @@ class StreamingTranscriber(
     fun feed(frame: ShortArray) {
         if (cancelled) return
         val f = FloatArray(frame.size) { frame[it] / 32768f }
-        synchronized(chunker) {
-            detectionWindow?.feed(f)?.let { submitDetection(it) }
-            chunker.feed(f)
-        }
-    }
-
-    private fun submitDetection(sample: FloatArray) {
-        worker.execute {
-            if (!cancelled && language == null) detect(sample)
-        }
-    }
-
-    private fun detect(sample: FloatArray) {
-        language = try {
-            WhisperEngine.detectLanguage(context, sample)
-        } catch (e: Throwable) {
-            Log.e(TAG, "Language check failed", e)
-            SpeechLanguage.ENGLISH
-        }
+        synchronized(chunker) { chunker.feed(f) }
     }
 
     private fun submit(chunk: FloatArray) {
@@ -74,11 +47,7 @@ class StreamingTranscriber(
 
     private fun transcribePart(chunk: FloatArray) {
         try {
-            // Normally decided already; if the dictation was very short,
-            // decide from this piece.
-            if (language == null) detect(chunk)
-            val lang = language ?: SpeechLanguage.ENGLISH
-            val text = WhisperEngine.transcribe(context, chunk, prompt(), lang)
+            val text = WhisperEngine.transcribe(context, chunk, prompt())
             if (text == null) anyFailed = true else if (text.isNotBlank()) parts += text.trim()
         } catch (e: Throwable) {
             Log.e(TAG, "Transcribing a piece failed", e)
@@ -100,18 +69,14 @@ class StreamingTranscriber(
      * with the full cleaned-up text.
      */
     fun finish(options: TextCleanup.Options, onDone: (DictationResult) -> Unit) {
-        val rest = synchronized(chunker) {
-            detectionWindow?.flush()?.let { submitDetection(it) }
-            chunker.finish()
-        }
+        val rest = synchronized(chunker) { chunker.finish() }
         worker.execute {
             if (cancelled) return@execute
             if (rest != null) transcribePart(rest)
             val raw = parts.joinToString(" ")
             val result = when {
                 raw.isNotBlank() -> {
-                    val lang = language ?: SpeechLanguage.ENGLISH
-                    val text = TextCleanup.clean(raw, options.copy(language = lang))
+                    val text = TextCleanup.clean(raw, options)
                     if (text.isBlank()) DictationResult.NoSpeech else DictationResult.Text(text)
                 }
                 anyFailed -> DictationResult.Failed

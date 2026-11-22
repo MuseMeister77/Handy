@@ -159,31 +159,4 @@ class TextCleanupTest {
         assertTrue(!TextCleanup.looksLikePlaceholder("I will send it tomorrow"))
         assertTrue(!TextCleanup.looksLikePlaceholder("ok"))
     }
-
-    private fun cleanMs(s: String) =
-        TextCleanup.clean(s, TextCleanup.Options(language = SpeechLanguage.MALAY))
-
-    @Test fun malaySpokenPunctuation() {
-        assertEquals("Terima kasih, semua.", cleanMs("Terima kasih koma semua noktah"))
-        assertEquals("Boleh hantar esok?", cleanMs("Boleh hantar esok tanda soal"))
-        assertEquals("Salam,\nSila semak invois.", cleanMs("Salam koma baris baru sila semak invois."))
-        assertEquals("Satu.\n\nDua.", cleanMs("Satu. Perenggan baru. Dua."))
-    }
-
-    @Test fun malayKeepsParticleAhButDropsHesitation() {
-        assertEquals("Okay ah, jumpa esok.", cleanMs("Okay ah, jumpa esok."))
-        assertEquals("Saya rasa kita boleh mula.", cleanMs("Saya rasa, erm, kita boleh mula."))
-    }
-
-    @Test fun malayAcceptsEnglishCommandsToo() {
-        assertEquals("Terima kasih, semua.", cleanMs("Terima kasih comma semua full stop"))
-    }
-
-    @Test fun englishModeIgnoresMalayCommands() {
-        assertEquals("The koma.", clean("The koma."))
-    }
-
-    @Test fun malayContinuationLowercasesCommonWord() {
-        assertEquals(" dan saya setuju.", TextCleanup.fitToContext("Dan saya setuju.", "Projek itu bagus"))
-    }
 }
