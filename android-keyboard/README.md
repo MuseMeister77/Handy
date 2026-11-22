@@ -106,6 +106,15 @@ types into password boxes.
 - Say **"comma"**, **"full stop"**, **"question mark"**, **"new line"** or
   **"new paragraph"** when you want them exactly. ("Period" is deliberately
   _not_ a command, so "the reporting period" types normally.)
+- **Correct yourself as you go:** say _"no wait"_, _"sorry, I mean"_, _"or
+  rather"_ or _"actually no"_ and Spokify keeps only the correction
+  ("Meet on Friday, no wait, Monday" → "Meet on Monday"). Say _"scratch that"_
+  to drop the sentence you just said.
+- **Pauses are fine.** Stopping to think mid-sentence doesn't leave "..." in
+  the text; the sentence just continues.
+- Spokify also fixes repeated words ("the the"), "a"/"an", a lowercase "i" and
+  a missing full stop. Turn this off under **Settings → Fix corrections and
+  grammar** if you prefer your words exactly as spoken.
 - Add names and jargon under **Settings → Custom words** (for example _Oracle,
   OTC, AR aging, vendor master, DSO_) to help Whisper spell them right.
 - One dictation can be up to 5 minutes long. With **Settings → Faster results
@@ -190,6 +199,7 @@ release; with this approach the last sentence took about 0.3 s.
 | `AudioRecorder.kt`                        | Microphone capture into memory                                     |
 | `WhisperEngine.kt`, `cpp/whisper_jni.cpp` | Bridge to whisper.cpp                                              |
 | `ModelManager.kt`                         | Copies the bundled model out of the APK on first use               |
+| `Tidy.kt`                                 | Pause dots, self-corrections and grammar fixes (unit tested)       |
 | `TextCleanup.kt`                          | Filler removal, spoken punctuation, spacing/capitals (unit tested) |
 | `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps       |
 | `Dictation.kt`                            | Quick checks before transcribing (silence, blocked mic)            |

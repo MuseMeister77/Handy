@@ -65,6 +65,8 @@
     <string name="setting_live_hint">Turns speech into text sentence by sentence while you are still talking, so long dictations appear almost as soon as you stop. Turn off if accuracy seems lower; the whole recording is then processed in one go when you finish.</string>
     <string name="setting_fillers">Remove filler words</string>
     <string name="setting_fillers_hint">Drops \"um\", \"uh\", \"er\" and similar.</string>
+    <string name="setting_tidy">Fix corrections and grammar</string>
+    <string name="setting_tidy_hint">\"Friday, no wait, Monday\" becomes \"Monday\". Also say \"scratch that\" to drop what you just said. Fixes repeated words (\"the the\"), \"a\" / \"an\", a lowercase \"i\" and missing full stops.</string>
     <string name="setting_punct">Spoken punctuation</string>
     <string name="setting_punct_hint">Say \"comma\", \"full stop\", \"question mark\", \"new line\" or \"new paragraph\".</string>
     <string name="setting_history">Keep history</string>

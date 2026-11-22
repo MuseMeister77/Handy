@@ -48,8 +48,13 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_BUBBLE_Y, -1)
         set(v) = sp.edit().putInt(KEY_BUBBLE_Y, v).apply()
 
+    /** Fix self-corrections and small grammar slips. */
+    var smartTidy: Boolean
+        get() = sp.getBoolean(KEY_TIDY, true)
+        set(v) = sp.edit().putBoolean(KEY_TIDY, v).apply()
+
     val cleanupOptions: TextCleanup.Options
-        get() = TextCleanup.Options(removeFillers, spokenPunctuation)
+        get() = TextCleanup.Options(removeFillers, spokenPunctuation, smartTidy)
 
     /** The custom words in the form Whisper understands best as a prompt. */
     val vocabularyPrompt: String
@@ -89,6 +94,7 @@ class Prefs(context: Context) {
     companion object {
         private const val KEY_FILLERS = "remove_fillers"
         private const val KEY_PUNCT = "spoken_punctuation"
+        private const val KEY_TIDY = "smart_tidy"
         private const val KEY_KEEP_HISTORY = "keep_history"
         private const val KEY_WORDS = "custom_words"
         private const val KEY_HISTORY = "history"

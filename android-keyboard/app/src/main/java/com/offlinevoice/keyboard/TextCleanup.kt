@@ -9,6 +9,8 @@ object TextCleanup {
     data class Options(
         val removeFillers: Boolean = true,
         val spokenPunctuation: Boolean = true,
+        /** Self-corrections ("Friday, no wait, Monday") and grammar slips. */
+        val smartTidy: Boolean = true,
     )
 
     // Hesitation sounds. "er" and "ah" are only removed as whole words.
@@ -47,6 +49,7 @@ object TextCleanup {
 
     fun clean(raw: String, options: Options = Options()): String {
         var t = removeRepeatedSentences(raw.replace(ANNOTATION, " "))
+        t = Tidy.removePauseDots(t)
         if (options.removeFillers) {
             t = FILLER.replace(t) { m ->
                 val (leadComma, sep, trail) = m.destructured
@@ -59,12 +62,17 @@ object TextCleanup {
                 keep + sep
             }
         }
+        if (options.smartTidy) {
+            t = Tidy.fixSelfCorrections(t)
+            t = Tidy.fixGrammar(t)
+        }
         if (options.spokenPunctuation) {
             for (c in COMMANDS) {
                 t = c.pattern.replace(t) { MARK_START + c.replacement + MARK_END }
             }
         }
-        return normalise(t)
+        t = normalise(t)
+        return if (options.smartTidy) Tidy.ensureFinalPunctuation(t) else t
     }
 
     private val SENTENCE = Regex("""[^.!?]+[.!?]*""")
@@ -133,7 +141,7 @@ object TextCleanup {
     // Words that are capitalised only because they start a sentence. If the
     // new dictation continues an unfinished sentence, these go lower case.
     // Names and terms such as "Oracle" are left alone.
-    private val COMMON_STARTERS = setOf(
+    internal val COMMON_STARTERS = setOf(
         "a", "an", "the", "and", "but", "or", "so", "then", "also", "because",
         "to", "for", "in", "on", "of", "at", "with", "from", "by", "as", "if",
         "that", "this", "these", "those", "which", "who", "when", "where",

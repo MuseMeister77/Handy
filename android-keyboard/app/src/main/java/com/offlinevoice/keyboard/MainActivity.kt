@@ -71,6 +71,7 @@ class MainActivity : Activity() {
         bindSwitch(R.id.sw_live, prefs.liveTranscription) { prefs.liveTranscription = it }
         bindSwitch(R.id.sw_fillers, prefs.removeFillers) { prefs.removeFillers = it }
         bindSwitch(R.id.sw_punct, prefs.spokenPunctuation) { prefs.spokenPunctuation = it }
+        bindSwitch(R.id.sw_tidy, prefs.smartTidy) { prefs.smartTidy = it }
         bindSwitch(R.id.sw_history, prefs.keepHistory) {
             prefs.keepHistory = it
             renderHistory()

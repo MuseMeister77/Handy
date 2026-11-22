@@ -108,8 +108,8 @@ android {
         applicationId = "com.offlinevoice.keyboard"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3.1"
+        versionCode = 7
+        versionName = "1.5.0"
 
         buildConfigField("String", "MODEL_FILE", "\"$modelFileName\"")
 

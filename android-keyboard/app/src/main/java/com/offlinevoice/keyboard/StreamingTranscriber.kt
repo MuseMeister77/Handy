@@ -25,6 +25,10 @@ class StreamingTranscriber(
     private var anyFailed = false // worker thread only
     @Volatile private var cancelled = false
 
+    /** Custom words keep their capital when a piece is joined mid-sentence. */
+    private val customWords: Set<String> =
+        vocabulary.split(',', '.', ' ', '\n').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+
     private val chunker = if (live) {
         SpeechChunker(onChunk = { submit(it) })
     } else {
@@ -73,7 +77,7 @@ class StreamingTranscriber(
         worker.execute {
             if (cancelled) return@execute
             if (rest != null) transcribePart(rest)
-            val raw = parts.joinToString(" ")
+            val raw = Tidy.joinPieces(parts, customWords)
             val result = when {
                 raw.isNotBlank() -> {
                     val text = TextCleanup.clean(raw, options)
