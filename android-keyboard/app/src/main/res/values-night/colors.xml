@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kb_bg">#FF1B1F24</color>
+    <color name="key_bg">#FF2D333B</color>
+    <color name="key_bg_pressed">#FF3D444D</color>
+    <color name="key_text">#FFE6EDF3</color>
+    <color name="status_text">#FFA8B3BF</color>
+    <color name="accent">#FF3B82F6</color>
+    <color name="accent_pressed">#FF2563EB</color>
+    <color name="recording">#FFEF4444</color>
+    <color name="recording_pressed">#FFDC2626</color>
+    <color name="busy">#FF64748B</color>
+    <color name="ok">#FF22C55E</color>
+    <color name="card_bg">#FF22272E</color>
+    <color name="divider">#FF373E47</color>
+</resources>

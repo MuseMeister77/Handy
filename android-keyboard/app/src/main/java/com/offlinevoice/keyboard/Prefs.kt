@@ -1,0 +1,72 @@
+package com.offlinevoice.keyboard
+
+import android.content.Context
+import android.content.SharedPreferences
+import org.json.JSONArray
+
+/** User settings and dictation history, stored privately on the phone. */
+class Prefs(context: Context) {
+    private val sp: SharedPreferences =
+        context.applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+    var removeFillers: Boolean
+        get() = sp.getBoolean(KEY_FILLERS, true)
+        set(v) = sp.edit().putBoolean(KEY_FILLERS, v).apply()
+
+    var spokenPunctuation: Boolean
+        get() = sp.getBoolean(KEY_PUNCT, true)
+        set(v) = sp.edit().putBoolean(KEY_PUNCT, v).apply()
+
+    var keepHistory: Boolean
+        get() = sp.getBoolean(KEY_KEEP_HISTORY, true)
+        set(v) {
+            sp.edit().putBoolean(KEY_KEEP_HISTORY, v).apply()
+            if (!v) clearHistory()
+        }
+
+    /** Comma-separated names and terms Whisper should spell correctly. */
+    var customWords: String
+        get() = sp.getString(KEY_WORDS, "").orEmpty()
+        set(v) = sp.edit().putString(KEY_WORDS, v.trim()).apply()
+
+    val cleanupOptions: TextCleanup.Options
+        get() = TextCleanup.Options(removeFillers, spokenPunctuation)
+
+    /** The custom words in the form Whisper understands best as a prompt. */
+    val vocabularyPrompt: String
+        get() {
+            val words = customWords.split(',', '\n').map { it.trim() }.filter { it.isNotEmpty() }
+            return if (words.isEmpty()) "" else words.joinToString(", ") + "."
+        }
+
+    fun history(): List<String> {
+        val raw = sp.getString(KEY_HISTORY, null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            List(arr.length()) { arr.getString(it) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun addToHistory(text: String) {
+        if (!keepHistory || text.isBlank()) return
+        val items = ArrayList<String>(MAX_HISTORY)
+        items.add(text)
+        items.addAll(history().take(MAX_HISTORY - 1))
+        sp.edit().putString(KEY_HISTORY, JSONArray(items).toString()).apply()
+    }
+
+    fun clearHistory() {
+        sp.edit().remove(KEY_HISTORY).apply()
+    }
+
+    companion object {
+        private const val KEY_FILLERS = "remove_fillers"
+        private const val KEY_PUNCT = "spoken_punctuation"
+        private const val KEY_KEEP_HISTORY = "keep_history"
+        private const val KEY_WORDS = "custom_words"
+        private const val KEY_HISTORY = "history"
+        const val MAX_HISTORY = 50
+    }
+}
