@@ -201,4 +201,26 @@ object TextCleanup {
         }
         return Splice(before + piece + after, before.length + piece.length, piece)
     }
+
+    /**
+     * The real text in a text box, with placeholder ("hint") text removed.
+     * Some apps, such as WhatsApp, report their grey placeholder ("Message")
+     * as the box's text without flagging it as a hint.
+     */
+    fun existingText(text: String?, hint: String?, showingHint: Boolean): String {
+        if (showingHint || text == null) return ""
+        if (!hint.isNullOrBlank() && text.trim().equals(hint.trim(), ignoreCase = true)) return ""
+        return text
+    }
+
+    /**
+     * When an app doesn't say where the cursor is, a lone word like
+     * "Message" or "Search" is far more likely its placeholder than text the
+     * person typed, so it isn't treated as text to continue from.
+     */
+    fun looksLikePlaceholder(text: String): Boolean {
+        val t = text.trim()
+        return t.isNotEmpty() && t.length <= 24 && t.all { it.isLetter() || it == ' ' } &&
+            t.count { it == ' ' } <= 2 && t.first().isUpperCase()
+    }
 }

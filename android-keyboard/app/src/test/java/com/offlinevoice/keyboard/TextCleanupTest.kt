@@ -1,6 +1,7 @@
 package com.offlinevoice.keyboard
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TextCleanupTest {
@@ -135,5 +136,27 @@ class TextCleanupTest {
     @Test fun keepsShortDeliberateRepeats() {
         assertEquals("No. No. Thank you.", clean("No. No. Thank you."))
         assertEquals("Yes, yes, that works.", clean("Yes, yes, that works."))
+    }
+
+    /** WhatsApp reports its grey "Message" placeholder as the box's text. */
+    @Test fun whatsAppPlaceholderIsNotText() {
+        assertEquals("", TextCleanup.existingText("Message", "Message", showingHint = false))
+        assertEquals("", TextCleanup.existingText("Message", null, showingHint = true))
+        assertEquals("", TextCleanup.existingText(null, "Message", showingHint = false))
+        assertEquals("Hi Ali", TextCleanup.existingText("Hi Ali", "Message", showingHint = false))
+    }
+
+    @Test fun whatsAppDictationIntoEmptyBox() {
+        val current = TextCleanup.existingText("Message", "Message", showingHint = false)
+        val r = TextCleanup.spliceAtCursor(current, -1, -1, "Thank you so much.")
+        assertEquals("Thank you so much.", r.text)
+    }
+
+    @Test fun placeholderGuessWhenCursorUnknown() {
+        assertTrue(TextCleanup.looksLikePlaceholder("Message"))
+        assertTrue(TextCleanup.looksLikePlaceholder("Type a message"))
+        assertTrue(!TextCleanup.looksLikePlaceholder("Thanks, see you."))
+        assertTrue(!TextCleanup.looksLikePlaceholder("I will send it tomorrow"))
+        assertTrue(!TextCleanup.looksLikePlaceholder("ok"))
     }
 }

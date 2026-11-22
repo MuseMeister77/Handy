@@ -392,8 +392,18 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
             return
         }
 
-        val showingHint = node.isShowingHintText
-        val current = if (showingHint) "" else node.text?.toString().orEmpty()
+        val raw = node.text?.toString()
+        val current = TextCleanup.existingText(raw, node.hintText?.toString(), node.isShowingHintText)
+        val cursorKnown = node.textSelectionStart >= 0 && node.textSelectionEnd >= 0
+
+        // The app doesn't say where the cursor is (WhatsApp's message box,
+        // for one). Paste instead, so the app itself puts the words at the
+        // cursor and clears any placeholder, as with a normal paste.
+        if (!cursorKnown) {
+            val before = if (looksUnreliable(current)) "" else current
+            if (paste(node, TextCleanup.fitToContext(text, before))) return
+        }
+
         val splice = TextCleanup.spliceAtCursor(
             current,
             node.textSelectionStart,
@@ -425,10 +435,27 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
         }
 
         // Some apps (often web pages) ignore "set text" but accept a paste.
-        copyToClipboard(piece)
-        if (!node.performAction(AccessibilityNodeInfo.ACTION_PASTE)) {
+        if (!paste(node, piece)) {
+            copyToClipboard(piece)
             toast(R.string.bubble_copied)
         }
+    }
+
+    private fun looksUnreliable(current: String) = TextCleanup.looksLikePlaceholder(current)
+
+    /**
+     * Pastes [text] at the app's cursor. Puts back what was on the clipboard
+     * afterwards when Android lets the app read it.
+     */
+    private fun paste(node: AccessibilityNodeInfo, text: String): Boolean {
+        val cm = getSystemService(ClipboardManager::class.java)
+        val previous = runCatching { cm.primaryClip }.getOrNull()
+        cm.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), text))
+        val ok = node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+        if (ok && previous != null) {
+            main.postDelayed({ runCatching { cm.setPrimaryClip(previous) } }, 500)
+        }
+        return ok
     }
 
     private fun copyToClipboard(text: String) {
