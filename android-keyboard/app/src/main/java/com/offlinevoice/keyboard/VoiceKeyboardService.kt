@@ -67,7 +67,11 @@ class VoiceKeyboardService : InputMethodService() {
         // Load the model in the background so the first dictation is quick.
         worker.execute {
             try {
-                WhisperEngine.ensureLoaded(this)
+                WhisperEngine.ensureLoaded(this, SpeechLanguage.ENGLISH)
+                // Malay and auto-detect also need the multilingual model.
+                if (prefs.languageMode != LanguageMode.ENGLISH) {
+                    WhisperEngine.ensureLoaded(this, SpeechLanguage.MALAY)
+                }
             } catch (e: Throwable) {
                 Log.e(TAG, "Preloading model failed", e)
             }
@@ -158,7 +162,13 @@ class VoiceKeyboardService : InputMethodService() {
             )
             return
         }
-        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription)
+        val st = StreamingTranscriber(
+            this,
+            worker,
+            prefs.vocabularyPrompt,
+            prefs.liveTranscription,
+            prefs.languageMode.fixed,
+        )
         val r = AudioRecorder(
             onLevel = { rms -> main.post { showLevel(rms) } },
             onMaxDurationReached = { main.post { if (state == State.RECORDING) stopAndTranscribe() } },
@@ -202,7 +212,7 @@ class VoiceKeyboardService : InputMethodService() {
         }
         state = State.TRANSCRIBING
         status.setText(
-            if (WhisperEngine.isReady) R.string.status_transcribing else R.string.status_loading_model,
+            if (WhisperEngine.isReady(SpeechLanguage.ENGLISH)) R.string.status_transcribing else R.string.status_loading_model,
         )
         render()
 
