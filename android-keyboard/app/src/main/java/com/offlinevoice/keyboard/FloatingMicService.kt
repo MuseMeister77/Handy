@@ -145,9 +145,9 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
         val size = dp(BUBBLE_DP)
         val frame = FrameLayout(this)
         icon = ImageView(this).apply {
-            setImageResource(R.drawable.ic_mic)
-            scaleType = ImageView.ScaleType.CENTER
-            setBackgroundResource(R.drawable.mic_bg_idle)
+            setImageResource(R.drawable.ic_spokify_head)
+            scaleType = ImageView.ScaleType.FIT_XY
+            setBackgroundResource(R.drawable.bubble_bg_idle)
             elevation = dp(4).toFloat()
             contentDescription = getString(R.string.bubble_cd)
         }
@@ -432,8 +432,8 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
         if (bubble == null) return
         when (state) {
             State.IDLE -> {
-                icon.setBackgroundResource(R.drawable.mic_bg_idle)
-                icon.setImageResource(R.drawable.ic_mic)
+                icon.setBackgroundResource(R.drawable.bubble_bg_idle)
+                showHead()
                 icon.alpha = 1f
                 icon.scaleX = 1f
                 icon.scaleY = 1f
@@ -441,13 +441,18 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
             }
             State.RECORDING -> {
                 icon.setBackgroundResource(R.drawable.mic_bg_recording)
-                icon.setImageResource(if (cancelHint) R.drawable.ic_close_white else R.drawable.ic_mic)
+                if (cancelHint) {
+                    icon.setImageResource(R.drawable.ic_close_white)
+                    icon.scaleType = ImageView.ScaleType.CENTER
+                } else {
+                    showHead()
+                }
                 icon.alpha = if (cancelHint) 0.6f else 1f
                 spinner.visibility = View.GONE
             }
             State.TRANSCRIBING -> {
                 icon.setBackgroundResource(R.drawable.mic_bg_busy)
-                icon.setImageResource(R.drawable.ic_mic)
+                showHead()
                 icon.alpha = 1f
                 icon.scaleX = 1f
                 icon.scaleY = 1f
@@ -455,6 +460,12 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
             }
         }
         updateVisibility()
+    }
+
+    /** The app's speaking-head logo, filling the bubble like the app icon. */
+    private fun showHead() {
+        icon.setImageResource(R.drawable.ic_spokify_head)
+        icon.scaleType = ImageView.ScaleType.FIT_XY
     }
 
     /** The bubble grows a little with your voice, so you can see it hears you. */
