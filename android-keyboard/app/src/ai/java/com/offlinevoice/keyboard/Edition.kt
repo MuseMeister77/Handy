@@ -6,6 +6,7 @@ import android.content.Context
 object Edition {
     private var cachedSignature: String? = null
     private var cached: TextPolisher? = null
+    private var closeInner: AutoCloseable? = null
 
     /** Null when AI polish is off ([ignoreSwitch]: for the settings Test button). */
     @Synchronized
@@ -23,7 +24,7 @@ object Edition {
 
         val signature = listOf(provider.key, apiKey.hashCode(), model, baseUrl, system).joinToString("|")
         if (signature == cachedSignature) cached?.let { return it }
-        (cached as? AutoCloseable)?.close()
+        closeInner?.close()
         val polisher = try {
             when (provider) {
                 AiProvider.CLAUDE -> ClaudePolisher(apiKey, model, system)
@@ -41,8 +42,11 @@ object Edition {
             // E.g. the Claude SDK needs something this phone's Android lacks.
             return FailingPolisher("couldn't start the AI service on this phone")
         }
-        cached = polisher
+        closeInner = polisher as? AutoCloseable
+        // Long dictations are polished in pieces of about 200 words.
+        val segmented = SegmentedPolisher(polisher, prefs.aiStyle)
+        cached = segmented
         cachedSignature = signature
-        return polisher
+        return segmented
     }
 }

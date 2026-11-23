@@ -105,6 +105,7 @@ class StreamingTranscriber(
         }
         return when (val r = outcome) {
             is PolishResult.Ok -> DictationResult.Text(r.text)
+            is PolishResult.Partial -> DictationResult.Text(r.text, aiProblem = r.reason)
             is PolishResult.Failed -> DictationResult.Text(text, aiProblem = r.reason)
         }
     }

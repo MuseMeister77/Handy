@@ -7,6 +7,7 @@
     <!-- Keyboard -->
     <string name="status_idle">Tap the mic and speak</string>
     <string name="status_listening">Listening… %1$d:%2$02d · tap ■ to finish</string>
+    <string name="status_max_reached">Reached the 15-minute limit, so recording stopped. Typing what you said…</string>
     <string name="status_transcribing">Turning speech into text…</string>
     <string name="status_loading_model">Loading the speech model (first use only)…</string>
     <string name="status_no_speech">Didn\'t catch that. Tap the mic and try again.</string>

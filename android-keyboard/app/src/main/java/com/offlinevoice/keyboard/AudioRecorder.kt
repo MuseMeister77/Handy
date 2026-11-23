@@ -19,7 +19,8 @@ class AudioRecorder(
 ) {
     companion object {
         const val SAMPLE_RATE = 16_000
-        const val MAX_SECONDS = 300
+        /** Longest single dictation: 15 minutes, for explaining a whole process. */
+        const val MAX_SECONDS = 15 * 60
     }
 
     @Volatile private var recording = false

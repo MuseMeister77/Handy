@@ -82,4 +82,20 @@ class PolishPromptTest {
         assertEquals("claude-opus-5-5", AiProvider.CLAUDE.defaultModel)
         assertEquals("", AiProvider.OPENAI.defaultModel)
     }
+
+    @Test fun aiWaitGrowsWithLength() {
+        assertEquals(20L, PolishTiming.timeoutSeconds("A short message to the team."))
+        assertEquals(20L + 25, PolishTiming.timeoutSeconds("word ".repeat(1000)))
+        assertEquals(90L, PolishTiming.timeoutSeconds("word ".repeat(10_000)))
+    }
+
+    @Test fun recordingLimitIsFifteenMinutes() {
+        assertEquals(15 * 60, AudioRecorder.MAX_SECONDS)
+    }
+
+    @Test fun droppedPassageIsRejectedEvenIfItsWordsAppearElsewhere() {
+        val a = "the invoice is approved by the sales manager and then posted by finance on the same day. "
+        val said = a + "the credit note is approved by the sales manager and then posted by finance the next day. " + a
+        assertEquals(PolishResult.Failed("AI left out part of what was said"), PolishPrompt.review(said, a.trim()))
+    }
 }

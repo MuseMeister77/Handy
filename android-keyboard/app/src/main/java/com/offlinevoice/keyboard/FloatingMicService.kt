@@ -300,7 +300,14 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
         val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription, Edition.polisher(this))
         val r = AudioRecorder(
             onLevel = { rms -> main.post { showLevel(rms) } },
-            onMaxDurationReached = { main.post { if (state == State.RECORDING) stopAndTranscribe() } },
+            onMaxDurationReached = {
+                main.post {
+                    if (state == State.RECORDING) {
+                        toast(R.string.status_max_reached)
+                        stopAndTranscribe()
+                    }
+                }
+            },
             onFrame = st::feed,
         )
         if (!r.start()) {

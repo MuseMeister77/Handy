@@ -66,7 +66,7 @@ class OpenAiCompatiblePolisher(
         return try {
             conn.requestMethod = "POST"
             conn.connectTimeout = 10_000
-            conn.readTimeout = 20_000
+            conn.readTimeout = (PolishTiming.timeoutSeconds(text) * 1000).toInt()
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Authorization", "Bearer $apiKey")

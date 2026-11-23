@@ -2,6 +2,7 @@ package com.offlinevoice.keyboard
 
 import com.anthropic.client.AnthropicClient
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
+import com.anthropic.core.RequestOptions
 import com.anthropic.errors.AnthropicIoException
 import com.anthropic.errors.AnthropicServiceException
 import com.anthropic.errors.BadRequestException
@@ -24,9 +25,8 @@ class ClaudePolisher(
 
     private val client: AnthropicClient = AnthropicOkHttpClient.builder()
         .apiKey(apiKey)
-        // Someone is waiting with the keyboard open: give up quickly and
-        // let Spokify type its own clean-up instead.
-        .timeout(Duration.ofSeconds(15))
+        // Upper bound; each request sets its own, by length (PolishTiming).
+        .timeout(Duration.ofSeconds(90))
         .maxRetries(1)
         .apply { if (baseUrl != null) baseUrl(baseUrl) }
         .build()
@@ -34,7 +34,9 @@ class ClaudePolisher(
     override fun polish(text: String): PolishResult = try {
         val params = MessageCreateParams.builder()
             .model(model)
-            .maxTokens(8000L)
+            // Room for a long explanation (15 min is about 3,000 tokens) plus
+            // a little thinking at low effort.
+            .maxTokens(16000L)
             .system(systemPrompt)
             .addUserMessage(PolishPrompt.user(text))
             // Tidying a dictation is a light task: low effort keeps it fast.
@@ -48,7 +50,10 @@ class ClaudePolisher(
                 }
             }
             .build()
-        val message = client.beta().messages().create(params)
+        val options = RequestOptions.builder()
+            .timeout(Duration.ofSeconds(PolishTiming.timeoutSeconds(text)))
+            .build()
+        val message = client.beta().messages().create(params, options)
         if (message.stopReason().orElse(null) == BetaStopReason.REFUSAL) {
             PolishResult.Failed("Claude declined this text")
         } else {

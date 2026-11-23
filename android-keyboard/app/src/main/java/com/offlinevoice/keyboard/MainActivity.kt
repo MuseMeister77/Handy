@@ -269,6 +269,7 @@ class MainActivity : Activity() {
                     result.text = when (outcome) {
                         is PolishResult.Ok -> getString(R.string.ai_test_ok, ms, outcome.text)
                         is PolishResult.Failed -> getString(R.string.ai_test_failed, outcome.reason)
+                        is PolishResult.Partial -> getString(R.string.ai_test_failed, outcome.reason)
                         null -> getString(R.string.ai_test_failed, "AI polish unavailable")
                     }
                 }

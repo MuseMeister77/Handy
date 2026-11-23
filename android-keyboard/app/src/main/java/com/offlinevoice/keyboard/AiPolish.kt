@@ -18,6 +18,9 @@ sealed class PolishResult {
 
     /** [reason] is short and shown to the user, e.g. "invalid API key". */
     data class Failed(val reason: String) : PolishResult()
+
+    /** A long dictation where some pieces were polished and some weren't. */
+    data class Partial(val text: String, val reason: String) : PolishResult()
 }
 
 enum class AiProvider(val key: String) {
@@ -46,6 +49,22 @@ enum class AiProvider(val key: String) {
             GEMINI -> "https://generativelanguage.googleapis.com/v1beta/openai"
             else -> ""
         }
+}
+
+/** How long to wait for the AI, by dictation length. */
+object PolishTiming {
+    private const val BASE_SECONDS = 20L
+    private const val WORDS_PER_EXTRA_SECOND = 40
+    private const val MAX_SECONDS = 90L
+
+    /**
+     * 20 s for a short message, plus 1 s per 40 words, at most 90 s. A
+     * 15-minute explanation (about 2,000 words) gets about 70 s.
+     */
+    fun timeoutSeconds(text: String): Long {
+        val words = text.split(Regex("\\s+")).count { it.isNotEmpty() }
+        return (BASE_SECONDS + words / WORDS_PER_EXTRA_SECOND).coerceAtMost(MAX_SECONDS)
+    }
 }
 
 enum class PolishStyle(val key: String) { LIGHT("light"), POLISHED("polished") }
@@ -91,8 +110,10 @@ object PolishPrompt {
         )
         when (style) {
             PolishStyle.LIGHT -> append(
-                "- Always add full punctuation and break the text into proper sentences. Keep the speaker's own " +
-                    "words and their order; don't rephrase.\n",
+                "- Always add full punctuation and break the text into proper sentences. Where a long chain of " +
+                    "clauses is joined by \"and\", \"so\" or \"then\", end the sentence there and start a new one " +
+                    "(you may drop that joining \"and\"). Otherwise keep the speaker's own words and their order; " +
+                    "don't rephrase.\n",
             )
             PolishStyle.POLISHED -> append(
                 "- Make it easy to read: split run-on sentences and use short paragraphs. When the speaker lists " +
@@ -136,6 +157,7 @@ object PolishPrompt {
         if (t.length > input.length * 2 + 60) return PolishResult.Failed("AI added text that wasn't said")
         missingNumber(input, t)?.let { return PolishResult.Failed("AI dropped \"$it\"") }
         if (keptShare(input, t) < MIN_KEPT) return PolishResult.Failed("AI changed too much")
+        if (lengthShare(input, t) < MIN_LENGTH) return PolishResult.Failed("AI left out part of what was said")
         return PolishResult.Ok(t)
     }
 
@@ -151,6 +173,18 @@ object PolishPrompt {
         return said.count { it in reply }.toDouble() / said.size
     }
 
+    /**
+     * Reply length compared with what was said, in words. [keptShare] looks
+     * at distinct words, so it can't see a whole passage being dropped when
+     * the same words appear elsewhere; this can. Faithful clean-ups were
+     * 77-100% of the original length in testing.
+     */
+    internal fun lengthShare(input: String, output: String): Double {
+        val said = WORD.findAll(input.lowercase()).count()
+        if (said < 8) return 1.0
+        return WORD.findAll(output.lowercase()).count().toDouble() / said
+    }
+
     /** A figure that was said (e.g. "80", "15th", "1,000") but is missing from the reply. */
     internal fun missingNumber(input: String, output: String): String? {
         val replyDigits = NUMBER.findAll(output).map { it.value.replace(",", "") }.toSet()
@@ -158,6 +192,7 @@ object PolishPrompt {
     }
 
     private const val MIN_KEPT = 0.70
+    private const val MIN_LENGTH = 0.60
     private val WORD = Regex("""[a-z0-9']+""")
     private val NUMBER = Regex("""\d[\d,]*(?:\.\d+)?""")
 }

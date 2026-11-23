@@ -53,8 +53,8 @@ Off until you turn it on. In **Spokify AI → AI polish (optional)**:
 5. Tap **Test with a sample sentence** to check it works, then switch on **Use
    AI polish**.
 
-Every dictation is first cleaned by Spokify's own rules, then sent for polish.
-If the AI can't be reached, is slow (about 15–20 s limit), declines, or returns
+Every dictation is first cleaned by Spokify's own rules, then sent for polish. Long dictations are polished in pieces of about 200 words (one after another), so a long explanation of a process is punctuated and cleaned throughout; if one piece fails, that piece keeps Spokify's own text.
+If the AI can't be reached, is slow (Spokify waits 20 s for a short message, longer for long ones, up to 90 s), declines, or returns
 something that isn't a clean-up of your words, Spokify types its own version
 and shows why. The AI is told to treat your dictation as text to tidy, never
 as instructions to follow. Free API keys allow only a few requests per minute; when the limit is
@@ -155,7 +155,7 @@ types into password boxes.
   grammar** if you prefer your words exactly as spoken.
 - Add names and jargon under **Settings → Custom words** (for example _Oracle,
   OTC, AR aging, vendor master, DSO_) to help Whisper spell them right.
-- One dictation can be up to 5 minutes long. With **Settings → Faster results
+- One dictation can be up to 15 minutes long (enough to explain a whole process). With **Settings → Faster results
   while you speak** (on by default), Spokify turns each sentence into text
   while you're still talking, so even long dictations appear about a second
   after you stop. Pausing briefly between sentences helps it split cleanly.
