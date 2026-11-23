@@ -24,11 +24,19 @@ class OpenAiCompatiblePolisher(
     private val extras: Map<String, Any> = emptyMap(),
 ) : TextPolisher {
 
+    /** Cleared once the model rejects [extras], so later dictations skip them. */
+    @Volatile private var sendExtras = extras.isNotEmpty()
+
     override fun polish(text: String): PolishResult {
+        if (!sendExtras) return request(text, emptyMap()).result
         val first = request(text, extras)
+        if (first !is Attempt.Rejected) return first.result
         // Some models don't accept the extras (e.g. a "thinking" setting on a
-        // model that doesn't think): try once more without them.
-        return if (first is Attempt.Rejected && extras.isNotEmpty()) request(text, emptyMap()).result else first.result
+        // model that doesn't think): try once more without them, and if that
+        // works, stop sending them.
+        val second = request(text, emptyMap())
+        if (second.result is PolishResult.Ok) sendExtras = false
+        return second.result
     }
 
     private sealed class Attempt(val result: PolishResult) {

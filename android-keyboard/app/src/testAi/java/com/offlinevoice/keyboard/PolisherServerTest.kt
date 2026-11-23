@@ -221,4 +221,16 @@ class PolisherServerTest {
         reply = "{}"
         assertEquals(PolishResult.Failed("AI service busy, try a lighter model"), openAi().polish("hi"))
     }
+
+    @Test fun extrasStopOnceTheModelRejectsThem() {
+        // Fake server: rejects requests that carry reasoning_effort.
+        val polisher = openAi(mapOf("reasoning_effort" to "none"))
+        status = 400; reply = "{}"
+        polisher.polish("hi there") // rejected, retried without, still 400: keep trying extras next time
+        requests = 0
+        status = 200; reply = chatReply("Hi there.")
+        polisher.polish("hi there")
+        assertEquals(1, requests) // accepted on the first try with extras
+        assertEquals("none", lastBody.getString("reasoning_effort"))
+    }
 }

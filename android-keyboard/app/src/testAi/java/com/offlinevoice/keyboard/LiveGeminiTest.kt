@@ -31,7 +31,7 @@ class LiveGeminiTest {
             val polisher = OpenAiCompatiblePolisher(
                 AiProvider.GEMINI.openAiBaseUrl, key, model,
                 PolishPrompt.system(style, listOf("Oracle", "OTC", "DSO")),
-                mapOf("reasoning_effort" to "none"),
+                if ("lite" in model) emptyMap() else mapOf("reasoning_effort" to "none"),
             )
             for ((name, raw) in samples.filter { only.isEmpty() || it.first.contains(only) }) {
                 val spokify = TextCleanup.clean(raw)

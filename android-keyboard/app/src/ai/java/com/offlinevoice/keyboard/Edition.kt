@@ -27,10 +27,13 @@ object Edition {
         val polisher = try {
             when (provider) {
                 AiProvider.CLAUDE -> ClaudePolisher(apiKey, model, system)
-                // Gemini: keep "thinking" minimal. In testing it cut replies
-                // from 16-21 s to 7 s on flash models with the same result.
+                // Gemini: keep "thinking" minimal on full models; in testing it cut
+                // flash replies from 21.5 s to 1.4 s with a faithful result.
+                // "lite" models are fast without it and (since late Nov 2026)
+                // reject the setting, so it isn't sent to them.
                 AiProvider.GEMINI -> OpenAiCompatiblePolisher(
-                    baseUrl, apiKey, model, system, mapOf("reasoning_effort" to "none"),
+                    baseUrl, apiKey, model, system,
+                    if ("lite" in model) emptyMap() else mapOf("reasoning_effort" to "none"),
                 )
                 else -> OpenAiCompatiblePolisher(baseUrl, apiKey, model, system)
             }

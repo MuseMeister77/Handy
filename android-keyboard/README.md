@@ -46,9 +46,8 @@ Off until you turn it on. In **Spokify AI → AI polish (optional)**:
    key is stored encrypted with a key held in the Android Keystore, and app
    backup is turned off.
 3. Model: for Claude, leave it empty to use `claude-opus-5-5`, or enter another
-   (e.g. `claude-haiku-5-5` for faster, cheaper polishing). For Gemini, a "lite"
-   model such as `gemini-3.5-flash-lite` answered in about 1–2 seconds in
-   testing. For other services, enter a model name from your provider.
+   (e.g. `claude-haiku-5-5` for faster, cheaper polishing). For Gemini, leave it empty to use `gemini-3.5-flash-lite` (about 1–2 seconds
+   in testing). For other services, enter a model name from your provider.
 4. Pick a style: **Light touch** (fix grammar, keep your words) or **Polished**
    (clearer sentences, lists on separate lines).
 5. Tap **Test with a sample sentence** to check it works, then switch on **Use

@@ -31,6 +31,8 @@ enum class AiProvider(val key: String) {
     val defaultModel: String
         get() = when (this) {
             CLAUDE -> "claude-opus-5-5"
+            // Fastest faithful Gemini model in live testing (about 1-2 s).
+            GEMINI -> "gemini-3.5-flash-lite"
             else -> ""
         }
 

@@ -76,4 +76,10 @@ class PolishPromptTest {
         assertEquals(null, PolishPrompt.missingNumber("it costs 1,000 dollars", "It costs 1000 dollars."))
         assertEquals("250", PolishPrompt.missingNumber("we owe 250 and 300", "We owe 300."))
     }
+
+    @Test fun defaultModels() {
+        assertEquals("gemini-3.5-flash-lite", AiProvider.GEMINI.defaultModel)
+        assertEquals("claude-opus-5-5", AiProvider.CLAUDE.defaultModel)
+        assertEquals("", AiProvider.OPENAI.defaultModel)
+    }
 }

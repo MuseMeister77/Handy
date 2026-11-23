@@ -302,7 +302,7 @@ class MainActivity : Activity() {
         model.hint = provider.defaultModel.ifEmpty { getString(R.string.ai_model) }
         findViewById<TextView>(R.id.ai_model_hint).text = when (provider) {
             AiProvider.CLAUDE -> getString(R.string.ai_model_hint_claude, provider.defaultModel)
-            AiProvider.GEMINI -> getString(R.string.ai_model_hint_gemini)
+            AiProvider.GEMINI -> getString(R.string.ai_model_hint_gemini, provider.defaultModel)
             else -> getString(R.string.ai_model_hint_other)
         }
         val custom = if (provider == AiProvider.CUSTOM) View.VISIBLE else View.GONE
