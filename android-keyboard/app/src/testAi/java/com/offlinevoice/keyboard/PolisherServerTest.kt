@@ -148,7 +148,7 @@ class PolisherServerTest {
 
     @Test fun claudeReplyThatIsNotAClean_upIsRejected() {
         reply = claudeMessage("Sure! Here is a long essay. ".repeat(20))
-        assertEquals(PolishResult.Failed("unexpected reply"), claude().polish("hello"))
+        assertEquals(PolishResult.Failed("AI added text that wasn't said"), claude().polish("hello"))
     }
 
     @Test fun claudeServerDown() {
@@ -159,11 +159,15 @@ class PolisherServerTest {
 
     // ---- OpenAI-compatible (ChatGPT, Gemini, others) -----------------------------
 
-    private fun openAi() = OpenAiCompatiblePolisher("$base/v1/", "sk-test", "some-model", "SYSTEM")
+    private fun openAi(extras: Map<String, Any> = emptyMap()) =
+        OpenAiCompatiblePolisher("$base/v1/", "sk-test", "some-model", "SYSTEM", extras)
 
-    private fun chatReply(text: String) = JSONObject().put(
+    private fun chatReply(text: String, finish: String = "stop") = JSONObject().put(
         "choices",
-        org.json.JSONArray().put(JSONObject().put("message", JSONObject().put("role", "assistant").put("content", text))),
+        org.json.JSONArray().put(
+            JSONObject().put("finish_reason", finish)
+                .put("message", JSONObject().put("role", "assistant").put("content", text)),
+        ),
     ).toString()
 
     @Test fun openAiSendsTheRightRequest() {
@@ -172,6 +176,7 @@ class PolisherServerTest {
         assertEquals("/v1/chat/completions", lastPath)
         assertEquals("Bearer sk-test", lastHeaders["authorization"])
         assertEquals("some-model", lastBody.getString("model"))
+        assertEquals(0, lastBody.getInt("temperature"))
         val messages = lastBody.getJSONArray("messages")
         assertEquals("system", messages.getJSONObject(0).getString("role"))
         assertEquals("SYSTEM", messages.getJSONObject(0).getString("content"))
@@ -182,12 +187,38 @@ class PolisherServerTest {
         status = 401; reply = "{}"
         assertEquals(PolishResult.Failed("invalid API key"), openAi().polish("hi"))
         status = 429
-        assertEquals(PolishResult.Failed("rate limit or quota reached"), openAi().polish("hi"))
+        assertEquals(PolishResult.Failed("usage limit reached at your AI provider"), openAi().polish("hi"))
         status = 404
         assertEquals(PolishResult.Failed("model \"some-model\" or server address not found"), openAi().polish("hi"))
         status = 500
         assertEquals(PolishResult.Failed("AI service error 500"), openAi().polish("hi"))
         status = 200; reply = "not json"
         assertEquals(PolishResult.Failed("unexpected reply"), openAi().polish("hi"))
+    }
+
+    @Test fun openAiCutOffReplyIsRejected() {
+        reply = chatReply("Send the invoice", finish = "length")
+        assertEquals(PolishResult.Failed("AI reply was cut off"), openAi().polish("send the invoice to finance today"))
+    }
+
+    @Test fun geminiExtrasAreSentAndDroppedIfRejected() {
+        reply = chatReply("Hi there.")
+        openAi(mapOf("reasoning_effort" to "none")).polish("hi there")
+        assertEquals("none", lastBody.getString("reasoning_effort"))
+
+        // A model that rejects the extra field: Spokify retries without it.
+        status = 400
+        reply = "{}"
+        requests = 0
+        val r = openAi(mapOf("reasoning_effort" to "none")).polish("hi there")
+        assertEquals(2, requests)
+        assertTrue(!lastBody.has("reasoning_effort"))
+        assertEquals(PolishResult.Failed("request rejected (check the model name)"), r)
+    }
+
+    @Test fun openAiBusy() {
+        status = 503
+        reply = "{}"
+        assertEquals(PolishResult.Failed("AI service busy, try a lighter model"), openAi().polish("hi"))
     }
 }

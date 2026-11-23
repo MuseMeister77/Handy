@@ -53,8 +53,8 @@ class ClaudePolisher(
             PolishResult.Failed("Claude declined this text")
         } else {
             val reply = message.content().mapNotNull { it.text().orElse(null)?.text() }.joinToString("")
-            PolishPrompt.accept(text, reply)?.let { PolishResult.Ok(it) }
-                ?: PolishResult.Failed("unexpected reply")
+            val cutOff = message.stopReason().orElse(null) == BetaStopReason.MAX_TOKENS
+            PolishPrompt.review(text, reply, truncated = cutOff)
         }
     } catch (e: UnauthorizedException) {
         PolishResult.Failed("invalid API key")

@@ -71,7 +71,8 @@
     <string name="ai_key_missing">No key saved for this service yet.</string>
     <string name="ai_model">Model</string>
     <string name="ai_model_hint_claude">Leave empty to use %1$s (recommended). You can enter another Claude model, e.g. claude-haiku-5-5 for faster, cheaper polishing.</string>
-    <string name="ai_model_hint_other">Enter a model name from your provider\'s list (for example a small, fast chat model).</string>
+    <string name="ai_model_hint_other">Enter a model name from your provider\'s list. A small, fast model works best for dictation.</string>
+    <string name="ai_model_hint_gemini">Enter a Gemini model name. Recommended: a \"lite\" model such as gemini-3.5-flash-lite, which answered in about 1–2 seconds in testing. Full \"flash\" or \"pro\" models can take 10–20 seconds or more, and Spokify gives up after about 20.</string>
     <string name="ai_url">Server address</string>
     <string name="ai_url_hint">e.g. https://example.com/v1</string>
     <string name="ai_save">Save AI settings</string>

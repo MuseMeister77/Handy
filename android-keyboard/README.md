@@ -46,8 +46,9 @@ Off until you turn it on. In **Spokify AI → AI polish (optional)**:
    key is stored encrypted with a key held in the Android Keystore, and app
    backup is turned off.
 3. Model: for Claude, leave it empty to use `claude-opus-5-5`, or enter another
-   (e.g. `claude-haiku-5-5` for faster, cheaper polishing). For other services,
-   enter a model name from your provider.
+   (e.g. `claude-haiku-5-5` for faster, cheaper polishing). For Gemini, a "lite"
+   model such as `gemini-3.5-flash-lite` answered in about 1–2 seconds in
+   testing. For other services, enter a model name from your provider.
 4. Pick a style: **Light touch** (fix grammar, keep your words) or **Polished**
    (clearer sentences, lists on separate lines).
 5. Tap **Test with a sample sentence** to check it works, then switch on **Use
@@ -57,7 +58,8 @@ Every dictation is first cleaned by Spokify's own rules, then sent for polish.
 If the AI can't be reached, is slow (about 15–20 s limit), declines, or returns
 something that isn't a clean-up of your words, Spokify types its own version
 and shows why. The AI is told to treat your dictation as text to tidy, never
-as instructions to follow. You pay your AI provider for usage; check your
+as instructions to follow. Free API keys allow only a few requests per minute; when the limit is
+reached, Spokify types its own version and says so. You pay your AI provider for usage; check your
 employer's policy before using it for work content.
 
 ## 1. Install it on your phone
