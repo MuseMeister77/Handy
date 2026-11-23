@@ -56,6 +56,36 @@ class Prefs(context: Context) {
     val cleanupOptions: TextCleanup.Options
         get() = TextCleanup.Options(removeFillers, spokenPunctuation, smartTidy)
 
+    // ---- AI polish (Spokify AI edition only) --------------------------------
+
+    /** Off by default. Only the AI edition shows this setting. */
+    var aiEnabled: Boolean
+        get() = BuildConfig.AI_EDITION && sp.getBoolean(KEY_AI_ENABLED, false)
+        set(v) = sp.edit().putBoolean(KEY_AI_ENABLED, v).apply()
+
+    var aiProvider: AiProvider
+        get() = AiProvider.entries.firstOrNull { it.key == sp.getString(KEY_AI_PROVIDER, null) } ?: AiProvider.CLAUDE
+        set(v) = sp.edit().putString(KEY_AI_PROVIDER, v.key).apply()
+
+    var aiStyle: PolishStyle
+        get() = PolishStyle.entries.firstOrNull { it.key == sp.getString(KEY_AI_STYLE, null) } ?: PolishStyle.LIGHT
+        set(v) = sp.edit().putString(KEY_AI_STYLE, v.key).apply()
+
+    /** Model name for a provider; empty means the provider's default. */
+    fun aiModel(provider: AiProvider): String = sp.getString("$KEY_AI_MODEL.${provider.key}", "").orEmpty()
+
+    fun setAiModel(provider: AiProvider, model: String) =
+        sp.edit().putString("$KEY_AI_MODEL.${provider.key}", model.trim()).apply()
+
+    /** Base URL for "Other (OpenAI-compatible)". */
+    var aiCustomBaseUrl: String
+        get() = sp.getString(KEY_AI_BASE_URL, "").orEmpty()
+        set(v) = sp.edit().putString(KEY_AI_BASE_URL, v.trim().trimEnd('/')).apply()
+
+    /** The custom words as a list, for the AI prompt. */
+    val customWordList: List<String>
+        get() = customWords.split(',', '\n').map { it.trim() }.filter { it.isNotEmpty() }
+
     /** The custom words in the form Whisper understands best as a prompt. */
     val vocabularyPrompt: String
         get() {
@@ -95,6 +125,11 @@ class Prefs(context: Context) {
         private const val KEY_FILLERS = "remove_fillers"
         private const val KEY_PUNCT = "spoken_punctuation"
         private const val KEY_TIDY = "smart_tidy"
+        private const val KEY_AI_ENABLED = "ai_enabled"
+        private const val KEY_AI_PROVIDER = "ai_provider"
+        private const val KEY_AI_STYLE = "ai_style"
+        private const val KEY_AI_MODEL = "ai_model"
+        private const val KEY_AI_BASE_URL = "ai_base_url"
         private const val KEY_KEEP_HISTORY = "keep_history"
         private const val KEY_WORDS = "custom_words"
         private const val KEY_HISTORY = "history"

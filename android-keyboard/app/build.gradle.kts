@@ -108,8 +108,8 @@ android {
         applicationId = "com.offlinevoice.keyboard"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.5.0"
+        versionCode = 8
+        versionName = "1.6.0"
 
         buildConfigField("String", "MODEL_FILE", "\"$modelFileName\"")
 
@@ -141,6 +141,24 @@ android {
         }
     }
 
+    // Two editions from one codebase:
+    // - "offline": Spokify. No internet permission and no AI code at all, so
+    //   Android itself guarantees nothing leaves the phone.
+    // - "ai": Spokify AI. Adds optional "AI polish" with the user's own API
+    //   key (off by default), and therefore the internet permission.
+    flavorDimensions += "edition"
+    productFlavors {
+        create("offline") {
+            dimension = "edition"
+            buildConfigField("boolean", "AI_EDITION", "false")
+        }
+        create("ai") {
+            dimension = "edition"
+            applicationIdSuffix = ".ai"
+            buildConfigField("boolean", "AI_EDITION", "true")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -163,6 +181,13 @@ android {
     }
 
     packaging {
+        resources {
+            // Duplicate licence/metadata files from the AI edition's libraries.
+            excludes += setOf(
+                "META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*",
+                "META-INF/*.kotlin_module", "META-INF/versions/**",
+            )
+        }
         jniLibs {
             // ggml picks the fastest CPU variant for the phone at runtime by
             // loading it from the native library folder, so the libraries
@@ -197,5 +222,10 @@ tasks.configureEach {
 }
 
 dependencies {
+    // Claude, for the AI edition only. The offline edition doesn't include it.
+    "aiImplementation"("com.anthropic:anthropic-java:3.12.0")
+
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM unit tests (Android's copy is a stub there).
+    testImplementation("org.json:json:20240303")
 }

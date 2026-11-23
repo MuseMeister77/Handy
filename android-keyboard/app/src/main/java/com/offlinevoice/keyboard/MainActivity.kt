@@ -19,6 +19,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.RadioGroup
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -88,6 +89,8 @@ class MainActivity : Activity() {
             prefs.clearHistory()
             renderHistory()
         }
+
+        if (BuildConfig.AI_EDITION) setUpAiSettings()
 
         findViewById<TextView>(R.id.about).text = getString(R.string.about_text, ModelManager.modelName)
     }
@@ -213,6 +216,102 @@ class MainActivity : Activity() {
             .setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), text))
         // Android 13+ shows its own confirmation when something is copied.
         if (Build.VERSION.SDK_INT < 33) Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
+    }
+
+    // ---- AI polish (Spokify AI edition only) ----------------------------------
+
+    private val providerButtons = mapOf(
+        AiProvider.CLAUDE to R.id.ai_claude,
+        AiProvider.OPENAI to R.id.ai_openai,
+        AiProvider.GEMINI to R.id.ai_gemini,
+        AiProvider.CUSTOM to R.id.ai_custom,
+    )
+
+    private fun setUpAiSettings() {
+        findViewById<View>(R.id.ai_title).visibility = View.VISIBLE
+        findViewById<View>(R.id.ai_card).visibility = View.VISIBLE
+        val secrets = SecretStore(this)
+
+        bindSwitch(R.id.sw_ai, prefs.aiEnabled) { prefs.aiEnabled = it }
+
+        val providerGroup = findViewById<RadioGroup>(R.id.ai_provider_group)
+        providerGroup.check(providerButtons.getValue(prefs.aiProvider))
+        providerGroup.setOnCheckedChangeListener { _, id ->
+            providerButtons.entries.firstOrNull { it.value == id }?.let {
+                prefs.aiProvider = it.key
+                renderAiProvider(secrets)
+            }
+        }
+
+        val styleGroup = findViewById<RadioGroup>(R.id.ai_style_group)
+        styleGroup.check(if (prefs.aiStyle == PolishStyle.LIGHT) R.id.ai_light else R.id.ai_polished)
+        styleGroup.setOnCheckedChangeListener { _, id ->
+            prefs.aiStyle = if (id == R.id.ai_polished) PolishStyle.POLISHED else PolishStyle.LIGHT
+        }
+
+        findViewById<Button>(R.id.btn_ai_save).setOnClickListener {
+            saveAiFields(secrets)
+            Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btn_ai_test).setOnClickListener { button ->
+            saveAiFields(secrets)
+            val result = findViewById<TextView>(R.id.ai_test_result)
+            result.setText(R.string.ai_testing)
+            button.isEnabled = false
+            val sample = TextCleanup.clean(getString(R.string.ai_test_sample), prefs.cleanupOptions)
+            Thread {
+                val start = System.currentTimeMillis()
+                val outcome = Edition.polisher(this, ignoreSwitch = true)?.polish(sample)
+                val ms = (System.currentTimeMillis() - start).toInt()
+                runOnUiThread {
+                    button.isEnabled = true
+                    result.text = when (outcome) {
+                        is PolishResult.Ok -> getString(R.string.ai_test_ok, ms, outcome.text)
+                        is PolishResult.Failed -> getString(R.string.ai_test_failed, outcome.reason)
+                        null -> getString(R.string.ai_test_failed, "AI polish unavailable")
+                    }
+                }
+            }.start()
+        }
+
+        renderAiProvider(secrets)
+    }
+
+    /** Saves the key (if a new one was typed), model and server address. */
+    private fun saveAiFields(secrets: SecretStore) {
+        val provider = prefs.aiProvider
+        val keyField = findViewById<EditText>(R.id.ai_key)
+        val newKey = keyField.text.toString().trim()
+        if (newKey.isNotEmpty()) {
+            secrets.put(provider.secretName, newKey)
+            keyField.setText("")
+        }
+        prefs.setAiModel(provider, findViewById<EditText>(R.id.ai_model).text.toString())
+        if (provider == AiProvider.CUSTOM) prefs.aiCustomBaseUrl = findViewById<EditText>(R.id.ai_url).text.toString()
+        renderAiProvider(secrets)
+    }
+
+    private fun renderAiProvider(secrets: SecretStore) {
+        val provider = prefs.aiProvider
+        val saved = secrets.get(provider.secretName)
+        findViewById<TextView>(R.id.ai_key_status).text =
+            if (saved.isNullOrEmpty()) getString(R.string.ai_key_missing) else getString(R.string.ai_key_saved, saved.takeLast(4))
+        val model = findViewById<EditText>(R.id.ai_model)
+        model.setText(prefs.aiModel(provider))
+        model.hint = provider.defaultModel.ifEmpty { getString(R.string.ai_model) }
+        findViewById<TextView>(R.id.ai_model_hint).text = if (provider == AiProvider.CLAUDE) {
+            getString(R.string.ai_model_hint_claude, provider.defaultModel)
+        } else {
+            getString(R.string.ai_model_hint_other)
+        }
+        val custom = if (provider == AiProvider.CUSTOM) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.ai_url_label).visibility = custom
+        findViewById<EditText>(R.id.ai_url).apply {
+            visibility = custom
+            setText(prefs.aiCustomBaseUrl)
+        }
+        findViewById<TextView>(R.id.ai_test_result).text = ""
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Spokify AI only: needed for the optional "AI polish", which sends the
+      text of a dictation (never audio) to the AI provider the user chooses.
+      The offline edition does not have this permission.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

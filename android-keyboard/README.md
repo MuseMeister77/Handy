@@ -23,6 +23,43 @@ repository. It shares the idea (local Whisper dictation), not the code.
 
 ---
 
+## Two editions
+
+|                          | **Spokify**                                    | **Spokify AI**                                                                                        |
+| ------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Speech to text           | On the phone (Whisper)                         | On the phone (Whisper)                                                                                |
+| Tidy-up                  | Built-in rules                                 | Built-in rules, plus optional **AI polish** with your own API key                                     |
+| Internet permission      | **None**: Android itself blocks network access | Yes, used only for AI polish                                                                          |
+| What can leave the phone | Nothing                                        | When AI polish is on: the **text** of each dictation (never audio), sent to the AI service you choose |
+| APK                      | `spokify-apk`                                  | `spokify-ai-apk`                                                                                      |
+
+Both can be installed side by side (they're separate apps). Use one floating
+mic at a time: switch off the other one's accessibility service.
+
+### AI polish (Spokify AI)
+
+Off until you turn it on. In **Spokify AI → AI polish (optional)**:
+
+1. Choose a service: **Claude (Anthropic)**, **ChatGPT (OpenAI)**, **Gemini
+   (Google)**, or **Other** (any OpenAI-compatible server address).
+2. Paste your **API key** from that provider and tap **Save AI settings**. The
+   key is stored encrypted with a key held in the Android Keystore, and app
+   backup is turned off.
+3. Model: for Claude, leave it empty to use `claude-opus-5-5`, or enter another
+   (e.g. `claude-haiku-5-5` for faster, cheaper polishing). For other services,
+   enter a model name from your provider.
+4. Pick a style: **Light touch** (fix grammar, keep your words) or **Polished**
+   (clearer sentences, lists on separate lines).
+5. Tap **Test with a sample sentence** to check it works, then switch on **Use
+   AI polish**.
+
+Every dictation is first cleaned by Spokify's own rules, then sent for polish.
+If the AI can't be reached, is slow (about 15–20 s limit), declines, or returns
+something that isn't a clean-up of your words, Spokify types its own version
+and shows why. The AI is told to treat your dictation as text to tidy, never
+as instructions to follow. You pay your AI provider for usage; check your
+employer's policy before using it for work content.
+
 ## 1. Install it on your phone
 
 You install the app from an APK file ("sideloading"). It isn't on the Play Store.
@@ -128,14 +165,15 @@ types into password boxes.
 
 These are things you can check yourself, for example for an IT or audit review:
 
-| Control               | Evidence                                                                                                                                                                                        |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No network access     | `AndroidManifest.xml` asks only for `RECORD_AUDIO`. On the phone: _Settings → Apps → Spokify → Permissions_ shows only Microphone. The GitHub build fails if the APK ever asks for `INTERNET`.  |
-| Audio is not stored   | Audio is kept in memory only and released after each dictation (`AudioRecorder.kt`).                                                                                                            |
-| No cloud backup       | Android backup and device-to-device transfer are turned off for the app (`data_extraction_rules.xml`).                                                                                          |
-| Limited screen access | The floating mic only listens for window and focus events and reads the focused text box, to type at the cursor (`floating_mic_service.xml`, `FloatingMicService.kt`). It skips password boxes. |
-| History is optional   | _Settings → Keep history_. Turning it off deletes saved items.                                                                                                                                  |
-| Pinned components     | The whisper.cpp source and the model file are checked against fixed SHA-256 values during the build (`app/build.gradle.kts`).                                                                   |
+| Control                          | Evidence                                                                                                                                                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No network access                | `AndroidManifest.xml` asks only for `RECORD_AUDIO`. On the phone: _Settings → Apps → Spokify → Permissions_ shows only Microphone. The GitHub build fails if the APK ever asks for `INTERNET`.                                                                      |
+| Audio is not stored              | Audio is kept in memory only and released after each dictation (`AudioRecorder.kt`).                                                                                                                                                                                |
+| No cloud backup                  | Android backup and device-to-device transfer are turned off for the app (`data_extraction_rules.xml`).                                                                                                                                                              |
+| Limited screen access            | The floating mic only listens for window and focus events and reads the focused text box, to type at the cursor (`floating_mic_service.xml`, `FloatingMicService.kt`). It skips password boxes.                                                                     |
+| History is optional              | _Settings → Keep history_. Turning it off deletes saved items.                                                                                                                                                                                                      |
+| AI polish is opt-in (Spokify AI) | Off by default; only the text is sent, only to the service you choose, with your key (`StreamingTranscriber.kt`, `ClaudePolisher.kt`, `OpenAiCompatiblePolisher.kt`). The offline edition contains none of this code (`app/src/ai/` is only built into Spokify AI). |
+| Pinned components                | The whisper.cpp source and the model file are checked against fixed SHA-256 values during the build (`app/build.gradle.kts`).                                                                                                                                       |
 
 ## 5. Building it yourself
 
@@ -144,8 +182,9 @@ You need JDK 17 and the Android SDK with NDK `27.2.12479018` and CMake `3.22.1`.
 ```bash
 cd android-keyboard
 echo "sdk.dir=/path/to/Android/sdk" > local.properties
-./gradlew testReleaseUnitTest assembleRelease
-# APK: app/build/outputs/apk/release/app-release.apk
+./gradlew testOfflineReleaseUnitTest testAiReleaseUnitTest assembleOfflineRelease assembleAiRelease
+# APKs: app/build/outputs/apk/offline/release/app-offline-release.apk (Spokify)
+#       app/build/outputs/apk/ai/release/app-ai-release.apk (Spokify AI)
 ```
 
 The first build downloads two things (about 60 MB) into `.downloads/` and
@@ -155,7 +194,7 @@ checks their SHA-256:
   which ships an unmodified copy of upstream)
 - the Whisper **base.en** model, 5-bit quantised (`ggml-base.en-q5_1.bin`, 57 MB)
 
-To install over USB: `adb install -r app/build/outputs/apk/release/app-release.apk`.
+To install over USB: `adb install -r app/build/outputs/apk/offline/release/app-offline-release.apk`.
 
 ### Signing
 
@@ -193,19 +232,22 @@ Mic (16 kHz, in memory) → split at pauses while you talk (SpeechChunker)
 In testing, 43 seconds of speech took 2.8 s to process in one go after
 release; with this approach the last sentence took about 0.3 s.
 
-| File                                      | Role                                                               |
-| ----------------------------------------- | ------------------------------------------------------------------ |
-| `VoiceKeyboardService.kt`                 | The keyboard: buttons, recording state, typing the result          |
-| `AudioRecorder.kt`                        | Microphone capture into memory                                     |
-| `WhisperEngine.kt`, `cpp/whisper_jni.cpp` | Bridge to whisper.cpp                                              |
-| `ModelManager.kt`                         | Copies the bundled model out of the APK on first use               |
-| `Tidy.kt`                                 | Pause dots, self-corrections and grammar fixes (unit tested)       |
-| `TextCleanup.kt`                          | Filler removal, spoken punctuation, spacing/capitals (unit tested) |
-| `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps       |
-| `Dictation.kt`                            | Quick checks before transcribing (silence, blocked mic)            |
-| `SpeechChunker.kt`                        | Splits live audio at pauses (unit tested)                          |
-| `StreamingTranscriber.kt`                 | Transcribes pieces in the background and joins them                |
-| `MainActivity.kt`                         | Setup steps, test box, settings, history                           |
+| File                                      | Role                                                                   |
+| ----------------------------------------- | ---------------------------------------------------------------------- |
+| `VoiceKeyboardService.kt`                 | The keyboard: buttons, recording state, typing the result              |
+| `AudioRecorder.kt`                        | Microphone capture into memory                                         |
+| `WhisperEngine.kt`, `cpp/whisper_jni.cpp` | Bridge to whisper.cpp                                                  |
+| `ModelManager.kt`                         | Copies the bundled model out of the APK on first use                   |
+| `AiPolish.kt`, `SecretStore.kt`           | AI polish prompt, reply checks and encrypted key storage               |
+| `ai/…/ClaudePolisher.kt`                  | Claude via Anthropic's official Java SDK (Spokify AI only)             |
+| `ai/…/OpenAiCompatiblePolisher.kt`        | ChatGPT, Gemini and other OpenAI-compatible services (Spokify AI only) |
+| `Tidy.kt`                                 | Pause dots, self-corrections and grammar fixes (unit tested)           |
+| `TextCleanup.kt`                          | Filler removal, spoken punctuation, spacing/capitals (unit tested)     |
+| `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps           |
+| `Dictation.kt`                            | Quick checks before transcribing (silence, blocked mic)                |
+| `SpeechChunker.kt`                        | Splits live audio at pauses (unit tested)                              |
+| `StreamingTranscriber.kt`                 | Transcribes pieces in the background and joins them                    |
+| `MainActivity.kt`                         | Setup steps, test box, settings, history                               |
 
 whisper.cpp is compiled once per ARM CPU feature level. On first use it checks
 the phone's processor and loads the fastest version it supports, so newer
@@ -215,9 +257,9 @@ phones get the speed-ups and older ones still work.
 
 - **English only.** It uses the English-only `base.en` model.
 - **Not live.** Text appears after you stop, not while you speak.
-- **Cleanup is rule-based.** Unlike Wispr Flow's cloud AI it doesn't rewrite
-  or reformat your sentences. It removes fillers and handles spoken
-  punctuation.
+- **Spokify's own clean-up is rule-based.** It removes fillers, applies
+  self-corrections and fixes small grammar slips, but doesn't reword sentences.
+  For that, use AI polish in Spokify AI.
 - **64-bit ARM phones only** (`arm64-v8a`), which covers practically every
   phone sold since 2017.
 - **Speed depends on the phone.** Expect roughly 1–3 seconds for a 10-second

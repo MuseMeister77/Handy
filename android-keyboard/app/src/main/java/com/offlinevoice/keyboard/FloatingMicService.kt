@@ -297,7 +297,7 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
             return
         }
         target = findFocusedTextBox()
-        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription)
+        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription, Edition.polisher(this))
         val r = AudioRecorder(
             onLevel = { rms -> main.post { showLevel(rms) } },
             onMaxDurationReached = { main.post { if (state == State.RECORDING) stopAndTranscribe() } },
@@ -335,6 +335,9 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
                 if (result is DictationResult.Text) {
                     prefs.addToHistory(result.text)
                     insert(result.text)
+                    result.aiProblem?.let {
+                        Toast.makeText(this, getString(R.string.ai_fallback, it), Toast.LENGTH_LONG).show()
+                    }
                 } else {
                     showResult(result)
                 }

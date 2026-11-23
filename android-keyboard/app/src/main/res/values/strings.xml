@@ -57,6 +57,34 @@
     <string name="a11y_label">Spokify floating mic</string>
     <string name="a11y_description">Shows a floating mic over other apps. Hold it and speak, and your words are typed into the text box you are in. It only reads the text box you are typing in, so it can put your words at the cursor. Speech is processed on this phone, and the app has no internet permission.</string>
 
+    <string name="section_ai">AI polish (optional)</string>
+    <string name="ai_intro">Uses an AI service you choose to tidy each dictation further: smoother sentences, better grammar and lists. When this is on, the text of each dictation (never the audio) is sent to that service using your own API key, and you pay the provider for usage. Check your employer\'s policy before using it for work. If the AI can\'t be reached, Spokify types its own version instead.</string>
+    <string name="ai_switch">Use AI polish</string>
+    <string name="ai_provider">AI service</string>
+    <string name="ai_claude">Claude (Anthropic)</string>
+    <string name="ai_openai">ChatGPT (OpenAI)</string>
+    <string name="ai_gemini">Gemini (Google)</string>
+    <string name="ai_custom">Other (OpenAI-compatible)</string>
+    <string name="ai_key">API key</string>
+    <string name="ai_key_hint">Paste your API key</string>
+    <string name="ai_key_saved">Key saved (ends in %1$s). Stored encrypted on this phone. Paste a new one to replace it.</string>
+    <string name="ai_key_missing">No key saved for this service yet.</string>
+    <string name="ai_model">Model</string>
+    <string name="ai_model_hint_claude">Leave empty to use %1$s (recommended). You can enter another Claude model, e.g. claude-haiku-5-5 for faster, cheaper polishing.</string>
+    <string name="ai_model_hint_other">Enter a model name from your provider\'s list (for example a small, fast chat model).</string>
+    <string name="ai_url">Server address</string>
+    <string name="ai_url_hint">e.g. https://example.com/v1</string>
+    <string name="ai_save">Save AI settings</string>
+    <string name="ai_style">Polish style</string>
+    <string name="ai_light">Light touch: fix grammar, keep my words</string>
+    <string name="ai_polished">Polished: clearer sentences and lists</string>
+    <string name="ai_test">Test with a sample sentence</string>
+    <string name="ai_testing">Testing…</string>
+    <string name="ai_test_ok">✓ Works (%1$d ms):\n%2$s</string>
+    <string name="ai_test_failed">✗ Didn\'t work: %1$s</string>
+    <string name="ai_test_sample">um so i think we should uh move the meeting to friday no wait monday at ten and then can you send the the invoice summary to finance</string>
+    <string name="ai_fallback">AI polish unavailable (%1$s). Typed Spokify\'s own version.</string>
+
     <string name="section_try">Try it</string>
     <string name="try_hint">Tap here, switch to Spokify Keyboard, then tap the mic.</string>
 

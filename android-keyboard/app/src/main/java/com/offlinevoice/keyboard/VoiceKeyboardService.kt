@@ -158,7 +158,7 @@ class VoiceKeyboardService : InputMethodService() {
             )
             return
         }
-        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription)
+        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription, Edition.polisher(this))
         val r = AudioRecorder(
             onLevel = { rms -> main.post { showLevel(rms) } },
             onMaxDurationReached = { main.post { if (state == State.RECORDING) stopAndTranscribe() } },
@@ -234,7 +234,8 @@ class VoiceKeyboardService : InputMethodService() {
             ic.commitText(toType, 1)
             lastInserted = toType
             prefs.addToHistory(text)
-            showIdleStatus()
+            val aiProblem = result.aiProblem
+            if (aiProblem != null) status.text = getString(R.string.ai_fallback, aiProblem) else showIdleStatus()
         }
         render()
     }

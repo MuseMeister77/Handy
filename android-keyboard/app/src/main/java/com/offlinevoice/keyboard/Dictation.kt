@@ -2,7 +2,11 @@ package com.offlinevoice.keyboard
 
 /** Outcome of one dictation, shared by the keyboard and the floating mic. */
 sealed class DictationResult {
-    data class Text(val text: String) : DictationResult()
+    /**
+     * [aiProblem] is set when AI polish was on but couldn't be used (e.g. "no
+     * connection"); [text] is then Spokify's own clean-up.
+     */
+    data class Text(val text: String, val aiProblem: String? = null) : DictationResult()
     object NoSpeech : DictationResult()
     /** Android gave the app silence instead of audio (mic blocked in the background). */
     object MicBlocked : DictationResult()

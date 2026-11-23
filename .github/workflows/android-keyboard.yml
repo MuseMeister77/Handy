@@ -62,23 +62,32 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
-      - name: Unit tests
-        run: ./gradlew --no-daemon testReleaseUnitTest
+      - name: Unit tests (both editions)
+        run: ./gradlew --no-daemon testOfflineReleaseUnitTest testAiReleaseUnitTest
 
-      - name: Build APK
-        run: ./gradlew --no-daemon assembleRelease
+      - name: Build APKs (Spokify and Spokify AI)
+        run: ./gradlew --no-daemon assembleOfflineRelease assembleAiRelease
 
-      - name: Check the app has no internet permission
+      # The offline edition's promise: Android itself prevents it from using
+      # the network. Fail the build if that ever changes.
+      - name: Check offline Spokify has no internet permission
         run: |
           AAPT=$(ls "$ANDROID_HOME"/build-tools/35.0.0/aapt2)
-          "$AAPT" dump permissions app/build/outputs/apk/release/app-release.apk | tee permissions.txt
+          APK=app/build/outputs/apk/offline/release/app-offline-release.apk
+          "$AAPT" dump permissions "$APK" | tee permissions.txt
           if grep -q "android.permission.INTERNET" permissions.txt; then
-            echo "::error::The APK requests INTERNET permission"
+            echo "::error::Offline Spokify requests INTERNET permission"
             exit 1
           fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: spokify-apk
-          path: android-keyboard/app/build/outputs/apk/release/app-release.apk
+          path: android-keyboard/app/build/outputs/apk/offline/release/app-offline-release.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spokify-ai-apk
+          path: android-keyboard/app/build/outputs/apk/ai/release/app-ai-release.apk
           if-no-files-found: error

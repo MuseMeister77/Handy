@@ -20,6 +20,8 @@ class StreamingTranscriber(
     private val vocabulary: String,
     /** False = old behaviour: everything is transcribed in one go at the end. */
     live: Boolean = true,
+    /** AI polish (Spokify AI edition, when switched on); null = off. */
+    private val polisher: TextPolisher? = null,
 ) {
     private val parts = ArrayList<String>() // touched only on the worker thread
     private var anyFailed = false // worker thread only
@@ -81,12 +83,29 @@ class StreamingTranscriber(
             val result = when {
                 raw.isNotBlank() -> {
                     val text = TextCleanup.clean(raw, options)
-                    if (text.isBlank()) DictationResult.NoSpeech else DictationResult.Text(text)
+                    if (text.isBlank()) DictationResult.NoSpeech else polish(text)
                 }
                 anyFailed -> DictationResult.Failed
                 else -> DictationResult.NoSpeech
             }
             onDone(result)
+        }
+    }
+
+    /** Runs AI polish if it's on; on any problem, keeps Spokify's own text. */
+    private fun polish(text: String): DictationResult {
+        val p = polisher ?: return DictationResult.Text(text)
+        // Catch everything, including errors from a library the phone can't
+        // run: AI problems must never lose or block a dictation.
+        val outcome = try {
+            p.polish(text)
+        } catch (e: Throwable) {
+            Log.e(TAG, "AI polish crashed", e)
+            PolishResult.Failed("AI error")
+        }
+        return when (val r = outcome) {
+            is PolishResult.Ok -> DictationResult.Text(r.text)
+            is PolishResult.Failed -> DictationResult.Text(text, aiProblem = r.reason)
         }
     }
 

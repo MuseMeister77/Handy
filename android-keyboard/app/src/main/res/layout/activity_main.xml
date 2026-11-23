@@ -52,6 +52,100 @@
             <TextView style="@style/SettingHint" android:text="@string/setting_bubble_always_hint" />
         </LinearLayout>
 
+        <!-- AI polish: Spokify AI edition only (hidden in the offline edition) -->
+        <TextView
+            android:id="@+id/ai_title"
+            style="@style/SectionTitle"
+            android:text="@string/section_ai"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/ai_card"
+            style="@style/Card"
+            android:visibility="gone">
+
+            <TextView style="@style/SettingHint" android:text="@string/ai_intro" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_ai" style="@style/SettingSwitch" android:text="@string/ai_switch" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/ai_provider" />
+            <RadioGroup
+                android:id="@+id/ai_provider_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/ai_claude" style="@style/SettingSwitch" android:text="@string/ai_claude" />
+                <RadioButton android:id="@+id/ai_openai" style="@style/SettingSwitch" android:text="@string/ai_openai" />
+                <RadioButton android:id="@+id/ai_gemini" style="@style/SettingSwitch" android:text="@string/ai_gemini" />
+                <RadioButton android:id="@+id/ai_custom" style="@style/SettingSwitch" android:text="@string/ai_custom" />
+            </RadioGroup>
+
+            <TextView style="@style/StepTitle" android:layout_marginTop="12dp" android:text="@string/ai_key" />
+            <TextView android:id="@+id/ai_key_status" style="@style/SettingHint" />
+            <EditText
+                android:id="@+id/ai_key"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/ai_key_hint"
+                android:importantForAutofill="no"
+                android:inputType="textPassword"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+
+            <TextView style="@style/StepTitle" android:layout_marginTop="12dp" android:text="@string/ai_model" />
+            <EditText
+                android:id="@+id/ai_model"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+            <TextView android:id="@+id/ai_model_hint" style="@style/SettingHint" />
+
+            <TextView
+                android:id="@+id/ai_url_label"
+                style="@style/StepTitle"
+                android:layout_marginTop="12dp"
+                android:text="@string/ai_url" />
+            <EditText
+                android:id="@+id/ai_url"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/ai_url_hint"
+                android:importantForAutofill="no"
+                android:inputType="textUri"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+
+            <Button android:id="@+id/btn_ai_save" style="@style/ActionButton" android:text="@string/ai_save" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/ai_style" />
+            <RadioGroup
+                android:id="@+id/ai_style_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/ai_light" style="@style/SettingSwitch" android:text="@string/ai_light" />
+                <RadioButton android:id="@+id/ai_polished" style="@style/SettingSwitch" android:text="@string/ai_polished" />
+            </RadioGroup>
+
+            <View style="@style/Divider" />
+
+            <Button android:id="@+id/btn_ai_test" style="@style/ActionButton" android:text="@string/ai_test" />
+            <TextView
+                android:id="@+id/ai_test_result"
+                style="@style/SettingHint"
+                android:layout_marginTop="6dp"
+                android:textIsSelectable="true" />
+        </LinearLayout>
+
         <!-- Setup -->
         <TextView style="@style/SectionTitle" android:text="@string/section_setup" />
 
