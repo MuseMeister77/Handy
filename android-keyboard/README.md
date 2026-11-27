@@ -103,6 +103,34 @@ With no internet permission it can't send anything anywhere.
 | 2. Turn on the keyboard | Tap **Open keyboard settings** → switch on **Spokify Keyboard** → OK | Android only lets you use keyboards you have turned on |
 | 3. Switch to it         | Tap **Choose keyboard** → **Spokify Keyboard**                       | Makes it the keyboard shown now                        |
 
+## Speech engines and languages
+
+Under **Settings → Speech recognition**:
+
+| Engine                                            | Accuracy (Malaysian English)         | Languages                  | Privacy                                                                                                                                                                             |
+| ------------------------------------------------- | ------------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Phone** (default): Samsung / Google voice input | Much better: trained on many accents | English, **Bahasa Melayu** | Spokify asks the phone's speech service to work **offline** using its offline language packs. Spokify itself has no internet permission, but the listening is done by that service. |
+| **Whisper**: built into Spokify                   | Weaker with accents                  | English only               | Everything stays inside Spokify                                                                                                                                                     |
+
+For the Phone engine, install the offline packs you need: Settings → search
+**"Offline language pack"** (e.g. Malay and English). In Bahasa Melayu, say
+"koma", "noktah", "tanda soal", "tanda seru", "baris baru" or "perenggan
+baru" for punctuation. If the phone has no usable speech service, Spokify uses
+Whisper and says so.
+
+## Switching to Spokify Keyboard quickly
+
+1. Settings → **Keyboard list and default** → switch on **Spokify Keyboard**
+   and **Show input method button on navigation bar**.
+2. While typing with your normal keyboard, tap the ⌨️ button next to Back and
+   choose Spokify Keyboard.
+3. It **starts listening straight away**. Tap ■ when done: your words are
+   typed and it **switches back** to your normal keyboard.
+
+Both behaviours can be turned off under **Settings → Spokify Keyboard**. The
+keyboard doesn't use Android's Accessibility feature, so banking apps such as
+MAE don't flag it (the floating mic does).
+
 ## 3. Daily use
 
 ### Floating mic
@@ -233,22 +261,24 @@ Mic (16 kHz, in memory) → split at pauses while you talk (SpeechChunker)
 In testing, 43 seconds of speech took 2.8 s to process in one go after
 release; with this approach the last sentence took about 0.3 s.
 
-| File                                      | Role                                                                   |
-| ----------------------------------------- | ---------------------------------------------------------------------- |
-| `VoiceKeyboardService.kt`                 | The keyboard: buttons, recording state, typing the result              |
-| `AudioRecorder.kt`                        | Microphone capture into memory                                         |
-| `WhisperEngine.kt`, `cpp/whisper_jni.cpp` | Bridge to whisper.cpp                                                  |
-| `ModelManager.kt`                         | Copies the bundled model out of the APK on first use                   |
-| `AiPolish.kt`, `SecretStore.kt`           | AI polish prompt, reply checks and encrypted key storage               |
-| `ai/…/ClaudePolisher.kt`                  | Claude via Anthropic's official Java SDK (Spokify AI only)             |
-| `ai/…/OpenAiCompatiblePolisher.kt`        | ChatGPT, Gemini and other OpenAI-compatible services (Spokify AI only) |
-| `Tidy.kt`                                 | Pause dots, self-corrections and grammar fixes (unit tested)           |
-| `TextCleanup.kt`                          | Filler removal, spoken punctuation, spacing/capitals (unit tested)     |
-| `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps           |
-| `Dictation.kt`                            | Quick checks before transcribing (silence, blocked mic)                |
-| `SpeechChunker.kt`                        | Splits live audio at pauses (unit tested)                              |
-| `StreamingTranscriber.kt`                 | Transcribes pieces in the background and joins them                    |
-| `MainActivity.kt`                         | Setup steps, test box, settings, history                               |
+| File                                      | Role                                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| `VoiceKeyboardService.kt`                 | The keyboard: buttons, recording state, typing the result               |
+| `AudioRecorder.kt`                        | Microphone capture into memory                                          |
+| `WhisperEngine.kt`, `cpp/whisper_jni.cpp` | Bridge to whisper.cpp                                                   |
+| `ModelManager.kt`                         | Copies the bundled model out of the APK on first use                    |
+| `AiPolish.kt`, `SecretStore.kt`           | AI polish prompt, reply checks and encrypted key storage                |
+| `ai/…/ClaudePolisher.kt`                  | Claude via Anthropic's official Java SDK (Spokify AI only)              |
+| `ai/…/OpenAiCompatiblePolisher.kt`        | ChatGPT, Gemini and other OpenAI-compatible services (Spokify AI only)  |
+| `Tidy.kt`                                 | Pause dots, self-corrections and grammar fixes (unit tested)            |
+| `TextCleanup.kt`                          | Filler removal, spoken punctuation, spacing/capitals (unit tested)      |
+| `FloatingMicService.kt`                   | The floating hold-to-talk bubble, and typing into other apps            |
+| `Dictation.kt`                            | Quick checks before transcribing (silence, blocked mic)                 |
+| `SpeechChunker.kt`                        | Splits live audio at pauses (unit tested)                               |
+| `StreamingTranscriber.kt`                 | Transcribes pieces in the background and joins them                     |
+| `DictationSession.kt`                     | One dictation, with either engine (shared by keyboard and floating mic) |
+| `PhoneSpeechSession.kt`                   | Phone engine: the phone's speech service, restarted across pauses       |
+| `MainActivity.kt`                         | Setup steps, test box, settings, history                                |
 
 whisper.cpp is compiled once per ARM CPU feature level. On first use it checks
 the phone's processor and loads the fastest version it supports, so newer

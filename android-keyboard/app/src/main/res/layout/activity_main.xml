@@ -185,6 +185,48 @@
                 android:textColorHint="@color/status_text" />
         </LinearLayout>
 
+        <!-- Speech recognition engine and language -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_engine" />
+
+        <LinearLayout style="@style/Card">
+            <RadioGroup
+                android:id="@+id/engine_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/engine_phone" style="@style/SettingSwitch" android:text="@string/engine_phone" />
+                <RadioButton android:id="@+id/engine_whisper" style="@style/SettingSwitch" android:text="@string/engine_whisper" />
+            </RadioGroup>
+            <TextView android:id="@+id/engine_status" style="@style/StepStatus" />
+            <TextView style="@style/SettingHint" android:layout_marginTop="4dp" android:text="@string/engine_hint" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/setting_speech_language" />
+            <RadioGroup
+                android:id="@+id/speech_lang_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/speech_lang_en" style="@style/SettingSwitch" android:text="@string/speech_lang_en" />
+                <RadioButton android:id="@+id/speech_lang_ms" style="@style/SettingSwitch" android:text="@string/speech_lang_ms" />
+            </RadioGroup>
+            <TextView style="@style/SettingHint" android:text="@string/speech_lang_hint" />
+        </LinearLayout>
+
+        <!-- Spokify Keyboard behaviour -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_keyboard_behaviour" />
+
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/sw_auto_start" style="@style/SettingSwitch" android:text="@string/setting_auto_start" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_auto_start_hint" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_auto_return" style="@style/SettingSwitch" android:text="@string/setting_auto_return" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_auto_return_hint" />
+        </LinearLayout>
+
         <!-- Settings -->
         <TextView style="@style/SectionTitle" android:text="@string/section_settings" />
 

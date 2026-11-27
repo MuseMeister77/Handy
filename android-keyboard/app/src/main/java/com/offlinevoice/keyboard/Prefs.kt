@@ -53,8 +53,32 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_TIDY, true)
         set(v) = sp.edit().putBoolean(KEY_TIDY, v).apply()
 
+    /** Which engine turns speech into text. */
+    var speechEngine: SpeechEngine
+        get() = SpeechEngine.entries.firstOrNull { it.key == sp.getString(KEY_ENGINE, null) } ?: SpeechEngine.PHONE
+        set(v) = sp.edit().putString(KEY_ENGINE, v.key).apply()
+
+    /** Language for the phone engine (Whisper is English only). */
+    var speechLanguage: SpeechLanguage
+        get() = SpeechLanguage.entries.firstOrNull { it.key == sp.getString(KEY_LANGUAGE, null) } ?: SpeechLanguage.ENGLISH
+        set(v) = sp.edit().putString(KEY_LANGUAGE, v.key).apply()
+
+    /** Spokify Keyboard starts listening as soon as it opens. */
+    var autoStart: Boolean
+        get() = sp.getBoolean(KEY_AUTO_START, true)
+        set(v) = sp.edit().putBoolean(KEY_AUTO_START, v).apply()
+
+    /** After typing a dictation, switch back to the previous keyboard. */
+    var autoReturn: Boolean
+        get() = sp.getBoolean(KEY_AUTO_RETURN, true)
+        set(v) = sp.edit().putBoolean(KEY_AUTO_RETURN, v).apply()
+
+    /** True when dictation will be in Bahasa Melayu. */
+    val malayActive: Boolean
+        get() = speechEngine == SpeechEngine.PHONE && speechLanguage == SpeechLanguage.MALAY
+
     val cleanupOptions: TextCleanup.Options
-        get() = TextCleanup.Options(removeFillers, spokenPunctuation, smartTidy)
+        get() = TextCleanup.Options(removeFillers, spokenPunctuation, smartTidy, malay = malayActive)
 
     // ---- AI polish (Spokify AI edition only) --------------------------------
 
@@ -125,6 +149,10 @@ class Prefs(context: Context) {
         private const val KEY_FILLERS = "remove_fillers"
         private const val KEY_PUNCT = "spoken_punctuation"
         private const val KEY_TIDY = "smart_tidy"
+        private const val KEY_ENGINE = "speech_engine"
+        private const val KEY_LANGUAGE = "speech_language"
+        private const val KEY_AUTO_START = "auto_start"
+        private const val KEY_AUTO_RETURN = "auto_return"
         private const val KEY_AI_ENABLED = "ai_enabled"
         private const val KEY_AI_PROVIDER = "ai_provider"
         private const val KEY_AI_STYLE = "ai_style"
@@ -139,4 +167,18 @@ class Prefs(context: Context) {
         private const val KEY_BUBBLE_Y = "bubble_y"
         const val MAX_HISTORY = 50
     }
+}
+
+enum class SpeechEngine(val key: String) {
+    /** The phone's own speech recognition (e.g. Samsung voice input), asked to work offline. */
+    PHONE("phone"),
+
+    /** Spokify's built-in Whisper model: English only, everything inside the app. */
+    WHISPER("whisper"),
+}
+
+enum class SpeechLanguage(val key: String, val tag: String) {
+    // Matches the "English (United Kingdom)" offline pack on Samsung phones.
+    ENGLISH("en", "en-GB"),
+    MALAY("ms", "ms-MY"),
 }

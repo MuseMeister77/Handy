@@ -69,6 +69,9 @@ class MainActivity : Activity() {
             getSystemService(InputMethodManager::class.java).showInputMethodPicker()
         }
 
+        setUpSpeechEngine()
+        bindSwitch(R.id.sw_auto_start, prefs.autoStart) { prefs.autoStart = it }
+        bindSwitch(R.id.sw_auto_return, prefs.autoReturn) { prefs.autoReturn = it }
         bindSwitch(R.id.sw_live, prefs.liveTranscription) { prefs.liveTranscription = it }
         bindSwitch(R.id.sw_fillers, prefs.removeFillers) { prefs.removeFillers = it }
         bindSwitch(R.id.sw_punct, prefs.spokenPunctuation) { prefs.spokenPunctuation = it }
@@ -313,6 +316,32 @@ class MainActivity : Activity() {
             setText(prefs.aiCustomBaseUrl)
         }
         findViewById<TextView>(R.id.ai_test_result).text = ""
+    }
+
+    private fun setUpSpeechEngine() {
+        val engineGroup = findViewById<RadioGroup>(R.id.engine_group)
+        engineGroup.check(if (prefs.speechEngine == SpeechEngine.PHONE) R.id.engine_phone else R.id.engine_whisper)
+        val langGroup = findViewById<RadioGroup>(R.id.speech_lang_group)
+        langGroup.check(if (prefs.speechLanguage == SpeechLanguage.MALAY) R.id.speech_lang_ms else R.id.speech_lang_en)
+
+        fun refresh() {
+            val phone = prefs.speechEngine == SpeechEngine.PHONE
+            // Whisper is English only.
+            for (i in 0 until langGroup.childCount) langGroup.getChildAt(i).isEnabled = phone
+            val status = findViewById<TextView>(R.id.engine_status)
+            status.visibility = if (phone) View.VISIBLE else View.GONE
+            val ok = DictationSessions.phoneEngineAvailable(this)
+            status.setText(if (ok) R.string.engine_status_ok else R.string.engine_status_missing)
+            status.setTextColor(getColor(if (ok) R.color.ok else R.color.recording))
+        }
+        engineGroup.setOnCheckedChangeListener { _, id ->
+            prefs.speechEngine = if (id == R.id.engine_whisper) SpeechEngine.WHISPER else SpeechEngine.PHONE
+            refresh()
+        }
+        langGroup.setOnCheckedChangeListener { _, id ->
+            prefs.speechLanguage = if (id == R.id.speech_lang_ms) SpeechLanguage.MALAY else SpeechLanguage.ENGLISH
+        }
+        refresh()
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()

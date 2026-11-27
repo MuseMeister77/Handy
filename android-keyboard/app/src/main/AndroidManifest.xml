@@ -10,6 +10,17 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-feature android:name="android.hardware.microphone" android:required="true" />
 
+    <!--
+      Lets Spokify find the phone's own speech service (e.g. Samsung voice
+      input) for the "Phone" speech engine. This is a lookup between apps on
+      the phone, not internet access.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"

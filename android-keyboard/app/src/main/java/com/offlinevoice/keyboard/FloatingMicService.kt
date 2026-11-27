@@ -58,9 +58,8 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
     private lateinit var params: WindowManager.LayoutParams
 
     private var state = State.IDLE
-    private var recorder: AudioRecorder? = null
-    /** Transcribes the current dictation piece by piece while recording. */
-    private var stream: StreamingTranscriber? = null
+    /** The dictation in progress (Whisper or the phone's speech engine). */
+    private var session: DictationSession? = null
     /** The text box that had focus when recording started. */
     private var target: AccessibilityNodeInfo? = null
     private var keyboardOpen = false
@@ -73,7 +72,7 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
         prefs.listen(this)
         addBubble()
         updateVisibility()
-        worker.execute {
+        if (prefs.speechEngine == SpeechEngine.WHISPER) worker.execute {
             try {
                 WhisperEngine.ensureLoaded(this)
             } catch (e: Throwable) {
@@ -110,10 +109,8 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
     private fun teardown() {
         if (!::prefs.isInitialized) return
         prefs.unlisten(this)
-        recorder?.cancel()
-        recorder = null
-        stream?.cancel()
-        stream = null
+        session?.cancel()
+        session = null
         main.removeCallbacksAndMessages(null)
         bubble?.let { runCatching { wm.removeView(it) } }
         bubble = null
@@ -297,68 +294,59 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
             return
         }
         target = findFocusedTextBox()
-        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription, Edition.polisher(this))
-        val r = AudioRecorder(
-            onLevel = { rms -> main.post { showLevel(rms) } },
-            onMaxDurationReached = {
-                main.post {
+        val (newSession, fellBack) = DictationSessions.create(
+            this,
+            prefs,
+            worker,
+            main,
+            SessionEvents(
+                onLevel = { rms -> showLevel(rms) },
+                onMaxReached = {
                     if (state == State.RECORDING) {
                         toast(R.string.status_max_reached)
                         stopAndTranscribe()
                     }
-                }
-            },
-            onFrame = st::feed,
+                },
+                onError = { message ->
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                    if (state == State.RECORDING) stopAndTranscribe()
+                },
+            ),
         )
-        if (!r.start()) {
-            st.cancel()
-            toast(R.string.status_mic_busy)
+        newSession.start()?.let { problem ->
+            Toast.makeText(this, problem, Toast.LENGTH_LONG).show()
             return
         }
-        recorder = r
-        stream = st
+        if (fellBack) toast(R.string.phone_fell_back)
+        session = newSession
         state = State.RECORDING
         render()
     }
 
     private fun stopAndTranscribe() {
-        val r = recorder ?: return
-        recorder = null
-        val st = stream ?: return
-        stream = null
-        val samples = r.stop()
-        Dictation.precheck(samples, r.wasSilenced)?.let { early ->
-            st.cancel()
-            state = State.IDLE
-            showResult(early)
-            render()
-            return
-        }
+        val current = session ?: return
+        session = null
         state = State.TRANSCRIBING
         render()
-        st.finish(prefs.cleanupOptions) { result ->
-            main.post {
-                state = State.IDLE
-                if (result is DictationResult.Text) {
-                    prefs.addToHistory(result.text)
-                    insert(result.text)
-                    result.aiProblem?.let {
-                        Toast.makeText(this, getString(R.string.ai_fallback, it), Toast.LENGTH_LONG).show()
-                    }
-                } else {
-                    showResult(result)
+        current.finish { result ->
+            state = State.IDLE
+            if (result is DictationResult.Text) {
+                prefs.addToHistory(result.text)
+                insert(result.text)
+                result.aiProblem?.let {
+                    Toast.makeText(this, getString(R.string.ai_fallback, it), Toast.LENGTH_LONG).show()
                 }
-                render()
-                updateVisibility()
+            } else {
+                showResult(result)
             }
+            render()
+            updateVisibility()
         }
     }
 
     private fun cancelRecording() {
-        recorder?.cancel()
-        recorder = null
-        stream?.cancel()
-        stream = null
+        session?.cancel()
+        session = null
         target = null
         state = State.IDLE
         render()
@@ -366,6 +354,10 @@ class FloatingMicService : AccessibilityService(), SharedPreferences.OnSharedPre
     }
 
     private fun showResult(result: DictationResult) {
+        if (result is DictationResult.Problem) {
+            Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
+            return
+        }
         toast(
             when (result) {
                 DictationResult.NoSpeech -> R.string.status_no_speech

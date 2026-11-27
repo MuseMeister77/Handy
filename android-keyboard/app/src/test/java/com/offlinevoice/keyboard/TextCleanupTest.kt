@@ -159,4 +159,31 @@ class TextCleanupTest {
         assertTrue(!TextCleanup.looksLikePlaceholder("I will send it tomorrow"))
         assertTrue(!TextCleanup.looksLikePlaceholder("ok"))
     }
+
+    private fun cleanMs(s: String) = TextCleanup.clean(s, TextCleanup.Options(malay = true))
+
+    @Test fun malaySpokenPunctuation() {
+        assertEquals("Terima kasih, semua.", cleanMs("terima kasih koma semua noktah"))
+        assertEquals("Boleh hantar esok?", cleanMs("boleh hantar esok tanda soal"))
+        assertEquals("Salam,\nSila semak invois.", cleanMs("salam koma baris baru sila semak invois"))
+        assertEquals("Satu.\n\nDua.", cleanMs("satu noktah perenggan baru dua noktah"))
+    }
+
+    @Test fun malayKeepsParticleAhButDropsHesitation() {
+        assertEquals("Okay ah, jumpa esok.", cleanMs("okay ah, jumpa esok"))
+        assertEquals("Saya rasa kita boleh mula.", cleanMs("saya rasa, erm, kita boleh mula"))
+    }
+
+    @Test fun malaySkipsEnglishGrammarRules() {
+        // "a"/"an" and "i" rules are English; Malay text is left alone.
+        assertEquals("Saya ada a invois.", cleanMs("saya ada a invois"))
+    }
+
+    @Test fun malayAcceptsEnglishCommandsToo() {
+        assertEquals("Terima kasih, semua.", cleanMs("terima kasih comma semua full stop"))
+    }
+
+    @Test fun englishModeIgnoresMalayCommands() {
+        assertEquals("The koma.", clean("The koma."))
+    }
 }

@@ -36,12 +36,11 @@ class VoiceKeyboardService : InputMethodService() {
     private lateinit var prefs: Prefs
 
     private var state = State.IDLE
-    private var recorder: AudioRecorder? = null
-    /** Transcribes the current dictation piece by piece while recording. */
-    private var stream: StreamingTranscriber? = null
+    /** The dictation in progress (Whisper or the phone's speech engine). */
+    private var session: DictationSession? = null
     private var recordingStartedAt = 0L
     /** Incremented to discard a transcription whose field has gone away. */
-    private var session = 0
+    private var sessionNumber = 0
 
     /**
      * Set when the keyboard closes while a dictation is in flight. The text
@@ -65,7 +64,7 @@ class VoiceKeyboardService : InputMethodService() {
         prefs = Prefs(this)
         worker = Executors.newSingleThreadExecutor()
         // Load the model in the background so the first dictation is quick.
-        worker.execute {
+        if (prefs.speechEngine == SpeechEngine.WHISPER) worker.execute {
             try {
                 WhisperEngine.ensureLoaded(this)
             } catch (e: Throwable) {
@@ -121,6 +120,20 @@ class VoiceKeyboardService : InputMethodService() {
         super.onStartInputView(info, restarting)
         if (state == State.IDLE && !targetLost) showIdleStatus()
         render()
+        // Switched to Spokify (or moved to a new text box): start listening
+        // straight away, like a voice keyboard. Never in password boxes.
+        if (!restarting && state == State.IDLE && prefs.autoStart && !isPassword(info)) {
+            main.post { if (state == State.IDLE && root?.isShown != false) startRecording() }
+        }
+    }
+
+    private fun isPassword(info: EditorInfo?): Boolean {
+        val type = info?.inputType ?: return false
+        val variation = type and android.text.InputType.TYPE_MASK_VARIATION
+        return variation == android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+            variation == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+            variation == android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD ||
+            variation == android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
@@ -131,10 +144,8 @@ class VoiceKeyboardService : InputMethodService() {
     }
 
     override fun onDestroy() {
-        recorder?.cancel()
-        recorder = null
-        stream?.cancel()
-        stream = null
+        session?.cancel()
+        session = null
         main.removeCallbacksAndMessages(null)
         worker.shutdown()
         super.onDestroy()
@@ -158,30 +169,35 @@ class VoiceKeyboardService : InputMethodService() {
             )
             return
         }
-        val st = StreamingTranscriber(this, worker, prefs.vocabularyPrompt, prefs.liveTranscription, Edition.polisher(this))
-        val r = AudioRecorder(
-            onLevel = { rms -> main.post { showLevel(rms) } },
-            onMaxDurationReached = {
-                main.post {
+        val (newSession, fellBack) = DictationSessions.create(
+            this,
+            prefs,
+            worker,
+            main,
+            SessionEvents(
+                onLevel = { rms -> showLevel(rms) },
+                onMaxReached = {
                     if (state == State.RECORDING) {
                         stopAndTranscribe()
                         if (state == State.TRANSCRIBING) status.setText(R.string.status_max_reached)
                     }
-                }
-            },
-            onFrame = st::feed,
+                },
+                onError = { message ->
+                    if (state == State.RECORDING) stopAndTranscribe()
+                    status.text = message
+                },
+            ),
         )
-        if (!r.start()) {
-            st.cancel()
-            status.setText(R.string.status_mic_busy)
+        newSession.start()?.let { problem ->
+            status.text = problem
             return
         }
-        recorder = r
-        stream = st
+        session = newSession
         state = State.RECORDING
         recordingStartedAt = SystemClock.elapsedRealtime()
         main.post(timerTick)
         render()
+        if (fellBack) status.setText(R.string.phone_fell_back)
     }
 
     private val timerTick = object : Runnable {
@@ -194,34 +210,26 @@ class VoiceKeyboardService : InputMethodService() {
     }
 
     private fun stopAndTranscribe() {
-        val r = recorder ?: return
-        recorder = null
+        val current = session ?: return
+        session = null
         main.removeCallbacks(timerTick)
-        val st = stream ?: return
-        stream = null
-        val samples = r.stop()
-        Dictation.precheck(samples, r.wasSilenced)?.let { early ->
-            st.cancel()
-            state = State.IDLE
-            showResultStatus(early)
-            render()
-            return
-        }
         state = State.TRANSCRIBING
         status.setText(
-            if (WhisperEngine.isReady) R.string.status_transcribing else R.string.status_loading_model,
+            if (prefs.speechEngine == SpeechEngine.WHISPER && !WhisperEngine.isReady) {
+                R.string.status_loading_model
+            } else {
+                R.string.status_transcribing
+            },
         )
         render()
 
         targetLost = false
-        val mySession = ++session
-        st.finish(prefs.cleanupOptions) { result ->
-            main.post { onTranscribed(mySession, result) }
-        }
+        val mySession = ++this.sessionNumber
+        current.finish { result -> onTranscribed(mySession, result) }
     }
 
     private fun onTranscribed(forSession: Int, result: DictationResult) {
-        if (forSession != session) return
+        if (forSession != sessionNumber) return
         state = State.IDLE
         val lost = targetLost
         targetLost = false
@@ -243,11 +251,20 @@ class VoiceKeyboardService : InputMethodService() {
             prefs.addToHistory(text)
             val aiProblem = result.aiProblem
             if (aiProblem != null) status.text = getString(R.string.ai_fallback, aiProblem) else showIdleStatus()
+            // Done: go back to the keyboard the user came from. A short delay
+            // lets the text land first. (Kept here if a note needs reading.)
+            if (prefs.autoReturn && aiProblem == null) {
+                main.postDelayed({ if (state == State.IDLE) switchBack() }, 350)
+            }
         }
         render()
     }
 
     private fun showResultStatus(result: DictationResult) {
+        if (result is DictationResult.Problem) {
+            status.text = result.message
+            return
+        }
         status.setText(
             when (result) {
                 DictationResult.NoSpeech -> R.string.status_no_speech
@@ -258,10 +275,8 @@ class VoiceKeyboardService : InputMethodService() {
     }
 
     private fun cancelRecording() {
-        recorder?.cancel()
-        recorder = null
-        stream?.cancel()
-        stream = null
+        session?.cancel()
+        session = null
         main.removeCallbacks(timerTick)
         state = State.IDLE
         showIdleStatus()
@@ -360,6 +375,17 @@ class VoiceKeyboardService : InputMethodService() {
             token != null && getSystemService(InputMethodManager::class.java).switchToLastInputMethod(token)
         }
         if (!switched) showPicker()
+    }
+
+    /** Back to the previous keyboard, without opening the picker if there is none. */
+    private fun switchBack() {
+        if (Build.VERSION.SDK_INT >= 28) {
+            switchToPreviousInputMethod()
+        } else {
+            val token = window?.window?.attributes?.token ?: return
+            @Suppress("DEPRECATION")
+            getSystemService(InputMethodManager::class.java).switchToLastInputMethod(token)
+        }
     }
 
     private fun showPicker() {

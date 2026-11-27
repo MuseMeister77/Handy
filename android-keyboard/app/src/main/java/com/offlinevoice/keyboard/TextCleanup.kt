@@ -11,13 +11,18 @@ object TextCleanup {
         val spokenPunctuation: Boolean = true,
         /** Self-corrections ("Friday, no wait, Monday") and grammar slips. */
         val smartTidy: Boolean = true,
+        /** Bahasa Melayu: Malay spoken punctuation, keep "ah", skip English grammar rules. */
+        val malay: Boolean = false,
     )
 
     // Hesitation sounds. "er" and "ah" are only removed as whole words.
     // Groups: 1 = comma before, 2 = separator before, 3 = punctuation after.
-    private val FILLER = Regex(
-        """(?i)(,?)(^|[\s,.;:!?])(?:u+m+|u+h+m*|e+r+m+|e+r+|a+h+|h+m+|m+h*m+)(?=$|[\s,.;:!?])([,.]?)""",
+    private fun fillerRegex(sounds: String) = Regex(
+        """(?i)(,?)(^|[\s,.;:!?])(?:$sounds)(?=$|[\s,.;:!?])([,.]?)""",
     )
+    private val FILLER = fillerRegex("""u+m+|u+h+m*|e+r+m+|e+r+|a+h+|h+m+|m+h*m+""")
+    // In Malay "ah" is a meaningful particle ("okay ah", "jom ah"), so it stays.
+    private val FILLER_MALAY = fillerRegex("""u+m+|u+h+m*|e+r+m+|e+r+|h+m+|m+h*m+""")
 
     // Non-speech annotations Whisper sometimes adds, e.g. "[BLANK_AUDIO]",
     // "(upbeat music)", "*laughs*".
@@ -27,7 +32,7 @@ object TextCleanup {
 
     // Spoken punctuation. Deliberately excludes words that are common in
     // normal speech: "period" ("the reporting period"), "colon", "dash".
-    private val COMMANDS: List<Command> = listOf(
+    private val COMMANDS: List<Command> = commands(
         "new paragraph" to "\n\n",
         "new line" to "\n",
         "newline" to "\n",
@@ -38,7 +43,22 @@ object TextCleanup {
         "exclamation point" to "!",
         "semicolon" to ";",
         "comma" to ",",
-    ).map { (words, out) ->
+    )
+
+    // Bahasa Melayu spoken punctuation. English commands work too, since
+    // people often mix the two.
+    private val COMMANDS_MALAY: List<Command> = commands(
+        "perenggan baru" to "\n\n",
+        "baris baru" to "\n",
+        "noktah" to ".",
+        "tanda soal" to "?",
+        "tanda tanya" to "?",
+        "tanda seru" to "!",
+        "koma bertitik" to ";",
+        "koma" to ",",
+    ) + COMMANDS
+
+    private fun commands(vararg pairs: Pair<String, String>): List<Command> = pairs.map { (words, out) ->
         val body = words.split(" ").joinToString("""\s+""")
         // Swallow the punctuation Whisper puts around the spoken command, so
         // "Hello, comma, world." becomes "Hello, world." A line break keeps
@@ -51,7 +71,7 @@ object TextCleanup {
         var t = removeRepeatedSentences(raw.replace(ANNOTATION, " "))
         t = Tidy.removePauseDots(t)
         if (options.removeFillers) {
-            t = FILLER.replace(t) { m ->
+            t = (if (options.malay) FILLER_MALAY else FILLER).replace(t) { m ->
                 val (leadComma, sep, trail) = m.destructured
                 // "think, uh, we" -> "think we"; "left um. Then" -> "left. Then"
                 val keep = when {
@@ -62,12 +82,13 @@ object TextCleanup {
                 keep + sep
             }
         }
-        if (options.smartTidy) {
+        // The self-correction phrases and grammar rules are English.
+        if (options.smartTidy && !options.malay) {
             t = Tidy.fixSelfCorrections(t)
             t = Tidy.fixGrammar(t)
         }
         if (options.spokenPunctuation) {
-            for (c in COMMANDS) {
+            for (c in if (options.malay) COMMANDS_MALAY else COMMANDS) {
                 t = c.pattern.replace(t) { MARK_START + c.replacement + MARK_END }
             }
         }
@@ -150,6 +171,13 @@ object TextCleanup {
         "could", "would", "should", "please", "not", "just", "all", "any",
         "some", "there", "here", "what", "how", "why", "after", "before",
         "until", "while", "maybe", "still", "now", "only", "even", "about",
+        // Bahasa Melayu
+        "dan", "tetapi", "tapi", "atau", "untuk", "yang", "saya", "kami",
+        "kita", "anda", "awak", "dia", "mereka", "ini", "itu", "di", "ke",
+        "dari", "daripada", "pada", "dengan", "juga", "sudah", "dah", "akan",
+        "boleh", "tidak", "tak", "jadi", "kalau", "jika", "sebab", "kerana",
+        "supaya", "lagi", "masih", "selepas", "sebelum", "semasa", "bila",
+        "apabila", "mungkin", "hanya", "cuma", "sila", "tolong", "ada", "nak",
     )
 
     /**
