@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Names for the AI edition, so it can't be confused with offline Spokify. -->
+<resources>
+    <string name="app_name">Spokify AI</string>
+    <string name="ime_name">Spokify AI Keyboard</string>
+    <string name="a11y_label">Spokify AI floating mic</string>
+</resources>

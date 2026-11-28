@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spokify: a head in profile, speaking. Scaled into the adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.8"
+        android:scaleY="0.8">
+        <path
+            android:fillColor="#FFFFC94A"
+            android:pathData="M77,90 L77,74 C85,68 88,58 86,47 C84,34 74,25 61,25 C49,25 41,33 40,44 L40,48 L35.5,56.5 C35,57.5 35.6,58.4 36.6,58.4 L40,58.6 L40,60.4 L36.2,62.3 L41,63.6 L36.4,65.4 L39.4,67.2 L39.4,70.5 C39.4,73.8 42,75.2 46,75 L52,74.6 L52,90 Z" />
+        <path
+            android:pathData="M30,55 L23,51 M30,63 L21,63 M30,71 L23,75"
+            android:strokeWidth="3.2"
+            android:strokeColor="#FFE9EEF2"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

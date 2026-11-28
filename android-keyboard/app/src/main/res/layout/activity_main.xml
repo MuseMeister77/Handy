@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="@color/key_text"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/tagline"
+            android:textColor="@color/status_text"
+            android:textSize="15sp" />
+
+        <!-- Floating mic -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_bubble" />
+
+        <LinearLayout style="@style/Card">
+            <TextView style="@style/SettingHint" android:text="@string/bubble_intro" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/bubble_step_title" />
+            <TextView android:id="@+id/bubble_status" style="@style/StepStatus" />
+            <Button android:id="@+id/btn_bubble" style="@style/ActionButton" android:text="@string/bubble_step_button" />
+            <TextView
+                android:id="@+id/bubble_restricted"
+                style="@style/SettingHint"
+                android:layout_marginTop="8dp"
+                android:text="@string/bubble_restricted" />
+            <Button android:id="@+id/btn_app_info" style="@style/ActionButton" android:text="@string/bubble_app_info" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_bubble_always" style="@style/SettingSwitch" android:text="@string/setting_bubble_always" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_bubble_always_hint" />
+        </LinearLayout>
+
+        <!-- AI polish: Spokify AI edition only (hidden in the offline edition) -->
+        <TextView
+            android:id="@+id/ai_title"
+            style="@style/SectionTitle"
+            android:text="@string/section_ai"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/ai_card"
+            style="@style/Card"
+            android:visibility="gone">
+
+            <TextView style="@style/SettingHint" android:text="@string/ai_intro" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_ai" style="@style/SettingSwitch" android:text="@string/ai_switch" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/ai_provider" />
+            <RadioGroup
+                android:id="@+id/ai_provider_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/ai_claude" style="@style/SettingSwitch" android:text="@string/ai_claude" />
+                <RadioButton android:id="@+id/ai_openai" style="@style/SettingSwitch" android:text="@string/ai_openai" />
+                <RadioButton android:id="@+id/ai_gemini" style="@style/SettingSwitch" android:text="@string/ai_gemini" />
+                <RadioButton android:id="@+id/ai_custom" style="@style/SettingSwitch" android:text="@string/ai_custom" />
+            </RadioGroup>
+
+            <TextView style="@style/StepTitle" android:layout_marginTop="12dp" android:text="@string/ai_key" />
+            <TextView android:id="@+id/ai_key_status" style="@style/SettingHint" />
+            <EditText
+                android:id="@+id/ai_key"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/ai_key_hint"
+                android:importantForAutofill="no"
+                android:inputType="textPassword"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+
+            <TextView style="@style/StepTitle" android:layout_marginTop="12dp" android:text="@string/ai_model" />
+            <EditText
+                android:id="@+id/ai_model"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+            <TextView android:id="@+id/ai_model_hint" style="@style/SettingHint" />
+
+            <TextView
+                android:id="@+id/ai_url_label"
+                style="@style/StepTitle"
+                android:layout_marginTop="12dp"
+                android:text="@string/ai_url" />
+            <EditText
+                android:id="@+id/ai_url"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/ai_url_hint"
+                android:importantForAutofill="no"
+                android:inputType="textUri"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+
+            <Button android:id="@+id/btn_ai_save" style="@style/ActionButton" android:text="@string/ai_save" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/ai_style" />
+            <RadioGroup
+                android:id="@+id/ai_style_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/ai_light" style="@style/SettingSwitch" android:text="@string/ai_light" />
+                <RadioButton android:id="@+id/ai_polished" style="@style/SettingSwitch" android:text="@string/ai_polished" />
+            </RadioGroup>
+
+            <View style="@style/Divider" />
+
+            <Button android:id="@+id/btn_ai_test" style="@style/ActionButton" android:text="@string/ai_test" />
+            <TextView
+                android:id="@+id/ai_test_result"
+                style="@style/SettingHint"
+                android:layout_marginTop="6dp"
+                android:textIsSelectable="true" />
+        </LinearLayout>
+
+        <!-- Setup -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_setup" />
+
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/StepTitle" android:text="@string/step1_title" />
+            <TextView android:id="@+id/step1_status" style="@style/StepStatus" />
+            <Button android:id="@+id/btn_grant" style="@style/ActionButton" android:text="@string/step1_button" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/step2_title" />
+            <TextView android:id="@+id/step2_status" style="@style/StepStatus" />
+            <Button android:id="@+id/btn_enable" style="@style/ActionButton" android:text="@string/step2_button" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/step3_title" />
+            <TextView android:id="@+id/step3_status" style="@style/StepStatus" />
+            <Button android:id="@+id/btn_choose" style="@style/ActionButton" android:text="@string/step3_button" />
+        </LinearLayout>
+
+        <!-- Try it -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_try" />
+
+        <LinearLayout style="@style/Card">
+            <EditText
+                android:id="@+id/try_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top|start"
+                android:hint="@string/try_hint"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textCapSentences"
+                android:minLines="3"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+        </LinearLayout>
+
+        <!-- Speech recognition engine and language -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_engine" />
+
+        <LinearLayout style="@style/Card">
+            <RadioGroup
+                android:id="@+id/engine_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/engine_phone" style="@style/SettingSwitch" android:text="@string/engine_phone" />
+                <RadioButton android:id="@+id/engine_whisper" style="@style/SettingSwitch" android:text="@string/engine_whisper" />
+            </RadioGroup>
+            <TextView android:id="@+id/engine_status" style="@style/StepStatus" />
+            <TextView style="@style/SettingHint" android:layout_marginTop="4dp" android:text="@string/engine_hint" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/setting_speech_language" />
+            <RadioGroup
+                android:id="@+id/speech_lang_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/speech_lang_en" style="@style/SettingSwitch" android:text="@string/speech_lang_en" />
+                <RadioButton android:id="@+id/speech_lang_ms" style="@style/SettingSwitch" android:text="@string/speech_lang_ms" />
+            </RadioGroup>
+            <TextView style="@style/SettingHint" android:text="@string/speech_lang_hint" />
+        </LinearLayout>
+
+        <!-- Spokify Keyboard behaviour -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_keyboard_behaviour" />
+
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/sw_auto_start" style="@style/SettingSwitch" android:text="@string/setting_auto_start" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_auto_start_hint" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_auto_return" style="@style/SettingSwitch" android:text="@string/setting_auto_return" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_auto_return_hint" />
+        </LinearLayout>
+
+        <!-- Settings -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_settings" />
+
+        <LinearLayout style="@style/Card">
+
+            <Switch android:id="@+id/sw_live" style="@style/SettingSwitch" android:text="@string/setting_live" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_live_hint" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_fillers" style="@style/SettingSwitch" android:text="@string/setting_fillers" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_fillers_hint" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_tidy" style="@style/SettingSwitch" android:text="@string/setting_tidy" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_tidy_hint" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_punct" style="@style/SettingSwitch" android:text="@string/setting_punct" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_punct_hint" />
+
+            <View style="@style/Divider" />
+
+            <Switch android:id="@+id/sw_history" style="@style/SettingSwitch" android:text="@string/setting_history" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_history_hint" />
+
+            <View style="@style/Divider" />
+
+            <TextView style="@style/StepTitle" android:text="@string/setting_words" />
+            <TextView style="@style/SettingHint" android:text="@string/setting_words_hint" />
+            <EditText
+                android:id="@+id/custom_words"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top|start"
+                android:hint="@string/setting_words_example"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine"
+                android:minLines="2"
+                android:textColor="@color/key_text"
+                android:textColorHint="@color/status_text" />
+            <Button android:id="@+id/btn_save_words" style="@style/ActionButton" android:text="@string/setting_words_save" />
+        </LinearLayout>
+
+        <!-- History -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_history" />
+
+        <LinearLayout style="@style/Card">
+            <TextView
+                android:id="@+id/history_empty"
+                style="@style/SettingHint"
+                android:text="@string/history_empty" />
+            <LinearLayout
+                android:id="@+id/history_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+            <Button android:id="@+id/btn_clear_history" style="@style/ActionButton" android:text="@string/history_clear" />
+        </LinearLayout>
+
+        <!-- About -->
+        <TextView style="@style/SectionTitle" android:text="@string/section_about" />
+
+        <LinearLayout style="@style/Card">
+            <TextView
+                android:id="@+id/about"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/status_text"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
